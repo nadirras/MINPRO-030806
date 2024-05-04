@@ -1,7 +1,7 @@
 import Link from 'next/link';
 export const Header = () => {
   return (
-    <div className="drawer z-20">
+    <div className="drawer z-20 max-md:p-2 max-sm:p-3">
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content">
         {/* Navbar */}
@@ -33,10 +33,10 @@ export const Header = () => {
               <input
                 type="text"
                 placeholder="Cari Event"
-                className="input input-bordered w-24 md:w-auto"
+                className="input input-bordered search-bar"
               />
             </div>
-            <ul className="menu menu-horizontal flex gap-2 max-sm:hidden ">
+            <ul className="menu menu-horizontal flex gap-2 max-md:hidden list-nav">
               <li>
                 <Link href="/">Beranda</Link>
               </li>
@@ -47,9 +47,9 @@ export const Header = () => {
               <li>
                 <Link href="/tentang">Tentang Kami</Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/kontak">Hubungi Kami</Link>
-              </li>
+              </li> */}
             </ul>
             <div className="dropdown dropdown-end">
               <div
@@ -68,13 +68,13 @@ export const Header = () => {
                 tabIndex={0}
                 className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
               >
-                <li className="sm:hidden">
+                <li>
                   <Link href="/">Beranda</Link>
                 </li>
-                <li className="sm:hidden">
+                <li>
                   <Link href="/jelajah">Jelajah</Link>
                 </li>
-                <li className="sm:hidden">
+                <li>
                   <Link href="/keranjang">Keranjang</Link>
                 </li>
                 <li>
