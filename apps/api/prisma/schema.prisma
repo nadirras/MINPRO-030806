@@ -19,3 +19,46 @@ model Sample {
 
   @@map("samples") // if you want to use snake_case format
 }
+
+enum Gender {
+  Laki_laki
+  Perempuan
+}
+
+enum Role {
+  Pembeli
+  Event_Organizer
+}
+
+model User {
+  id               Int              @id @default(autoincrement())
+  username         String           @unique
+  jenis_kelamin    Gender?
+  tanggal_lahir    DateTime?
+  nomor_telepon    String?
+  photo_profile    String?
+  email            String           @unique
+  password         String
+  role             Role?
+  myreferralCode   String                        //kode referral yang digunakan untuk mengidentifikasi referensi pengguna.
+  usedReferralCode String?                       // Kode referral yang digunakan saat registrasi
+  points           Int              @default(0) //jumlah poin atau skor yang dimiliki pengguna, terkait dengan penggunaan kode referral.
+  DiscountCoupon   DiscountCoupon[]
+}
+
+// model Referral {
+//   id             Int      @id @default(autoincrement())
+//   referrer       User     @relation(fields: [referrerId], references: [id]) //pengguna yang memberikan kode referral
+//   referrerId     Int
+//   referredUser   User     @relation(fields: [referredUserId], references: [id]) //pengguna yang menggunakan kode referral tersebut.
+//   referredUserId Int
+//   createdAt      DateTime @default(now())
+// }
+
+model DiscountCoupon {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  discount  Int      @default(10) // 10% discount
+  expiresAt DateTime
+}
