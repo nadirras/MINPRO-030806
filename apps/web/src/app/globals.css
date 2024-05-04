@@ -114,3 +114,28 @@ a {
     color-scheme: dark;
   }
 }
+
+@media (max-width: 480px) {
+  html {
+    font-size: 80%;
+  }
+  .keranjang {
+    display: flex;
+    flex-direction: column;
+  }
+  .search-bar {
+    width: 5rem;
+  }
+}
+
+@media (max-width: 850px) {
+  html {
+    font-size: 60%;
+  }
+  .list-nav {
+    display: hidden;
+  }
+  .search-bar {
+    width: 8rem;
+  }
+}

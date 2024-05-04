@@ -4,8 +4,8 @@ export default function RightSide() {
   return (
     <div>
       <div className="shadow-xl">
-        <div className="card-body">
-          <div className="flex gap-2">
+        <div className="card-body flex flex-col flex-wrap">
+          <div className="flex flex-wrap gap-2">
             <input
               type="text"
               placeholder="Masukkan kode promo"
