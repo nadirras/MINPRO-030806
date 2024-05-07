@@ -14,32 +14,31 @@ export class UserController {
       if (!username || !email || !password) {
         return res.status(400).send({
           status: 'error',
-          message: 'Username, email, dan password are required fields',
+          message: 'Username, email, and password are required fields',
         });
       }
 
-      // Hash the password before storing in database
+      // Hash the password before storing in the database
       const salt = await genSalt(10);
       const hashPassword = await hash(password, salt);
 
-      //Generate my referral code based on username
-      //Get initials (first three characters) from username
+      // Generate my referral code based on username
       const initials = req.body.username.slice(0, 3).toUpperCase();
-      //Generate random 3-digit number
       const randomNum = Math.floor(Math.random() * 1000);
-      // Combine initials and random digits to form referral code
       const myReferralCode = `${initials}${randomNum}`;
-      req.body.myReferralCode = myReferralCode;
+      // req.body.myReferralCode = myReferralCode;
 
-      //Prepare user data to be saved
+      // Prepare user data to be saved
       let userData = {
         username,
         email,
         password: hashPassword,
+        usedReferralCode: usedReferralCode,
         myreferralCode: myReferralCode,
+        points: 0, // Set default value for points if needed
       };
 
-      //Check if usedReferralCode is provided
+      // Check if usedReferralCode is provided
       if (usedReferralCode) {
         // Check if the usedReferralCode exists in the database
         const existingReferrer = await prisma.user.findFirst({
@@ -56,7 +55,6 @@ export class UserController {
         }
 
         // Add logic to give points or discount to the referrer
-        // For example:
         await prisma.user.update({
           where: {
             id: existingReferrer.id,
@@ -70,17 +68,17 @@ export class UserController {
         });
 
         // Store the usedReferralCode in userData separately
-        req.body.usedReferralCode = usedReferralCode;
+        // req.body.usedreferralCode = usedReferralCode;
       }
 
-      //create account
+      // Create new user in the database
       const user = await prisma.user.create({
         data: userData,
       });
 
       res.status(201).send({
         status: 'ok',
-        message: 'User registered succesfully',
+        message: 'User registered successfully',
         user,
       });
     } catch (err) {
