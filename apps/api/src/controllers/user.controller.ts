@@ -87,26 +87,6 @@ export class UserController {
           },
         });
   
-        // Generate discount coupon for the new user
-        const discountCode = `${usedReferralCode.slice(0, 3)}-${new Date().getFullYear()}-${new Date().getMonth() + 1}`.replace(/-/g, '');
-  
-        // Create DiscountCoupon Record for the new user
-        const newDiscountVoucher = await prisma.discountVoucher.create({
-          data: {
-            user: {
-              connect: {
-                id: existingUser.id,
-              },
-            },
-            discountCoupon: discountCode,
-            discountPercentage: 10, // 10% discount
-            expired_date: new Date(
-              new Date().getTime() + 3 * 30 * 24 * 60 * 60 * 1000
-            ), // 3 months expiration
-            discount_status: 'Active',
-          },
-        });
-  
         // Update userData to include discountVoucher ID
         userData = {
           ...userData,
@@ -131,6 +111,26 @@ export class UserController {
               id: newUser.id,
             },
           },
+        },
+      });
+
+      // Generate discount coupon for the new user
+      const discountCode = `${usedReferralCode.slice(0, 3)}-${new Date().getFullYear()}-${new Date().getMonth() + 1}`.replace(/-/g, '');
+  
+      // Create DiscountCoupon Record for the new user
+      const newDiscountVoucher = await prisma.discountVoucher.create({
+        data: {
+          user: {
+            connect: {
+              id: newUser.id,
+            },
+          },
+          discountCoupon: discountCode,
+          discountPercentage: 10, // 10% discount
+          expired_date: new Date(
+            new Date().getTime() + 3 * 30 * 24 * 60 * 60 * 1000
+          ), // 3 months expiration
+          discount_status: 'Active',
         },
       });
   
@@ -169,7 +169,7 @@ export class UserController {
         message: 'User registered successfully',
         user: newUser,
         referral,
-        discountVoucher: newUser.discountVoucher, // Include discount vouchers in the response
+        discountVoucher: newDiscountVoucher, // Include discount vouchers in the response
       });
     } catch (err) {
       console.error('Failed to register account:', err);
