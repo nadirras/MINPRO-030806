@@ -25,40 +25,160 @@ enum Gender {
   Perempuan
 }
 
-enum Role {
-  Pembeli
-  Event_Organizer
+enum DiscountStatus {
+  Active
+  Expired
+}
+
+enum PointStatus {
+  Active
+  Expired
+}
+
+enum StatusOrder {
+  Pending
+  WaitingConfirmation
+  Paid
+  Cancel
+}
+
+enum EventCategory {
+  Festival
+  Attraction
+  Workshop
+  Seminar
 }
 
 model User {
-  id               Int              @id @default(autoincrement())
-  username         String           @unique
-  jenis_kelamin    Gender?
-  tanggal_lahir    DateTime?
-  nomor_telepon    String?
-  photo_profile    String?
-  email            String           @unique
-  password         String
-  role             Role?
-  myreferralCode   String                        //kode referral yang digunakan untuk mengidentifikasi referensi pengguna.
-  usedReferralCode String?                       // Kode referral yang digunakan saat registrasi
-  points           Int              @default(0) //jumlah poin atau skor yang dimiliki pengguna, terkait dengan penggunaan kode referral.
-  DiscountCoupon   DiscountCoupon[]
+  id                 Int                  @id @default(autoincrement())
+  username           String               @unique
+  email              String               @unique
+  password           String
+  usedReferralCode   String? // Kode referral yang digunakan saat registrasi
+  createdAt          DateTime             @default(now())
+  jenis_kelamin      Gender?
+  tanggal_lahir      DateTime?
+  nomor_telepon      String?
+  photo_profile      String?              @db.LongText
+  JWT_token          String?
+  activation         Boolean?              @default(false)
+  referral           Referral?
+  discountVoucher    DiscountVoucher[]
+  Points             Points[]
+  Cart               Cart?
+  Review             Review[]
+}
+model Referral {
+  id             Int      @id @default(autoincrement())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         Int      @unique
+  myReferralCode String
+  createdAt      DateTime @default(now())
 }
 
-// model Referral {
-//   id             Int      @id @default(autoincrement())
-//   referrer       User     @relation(fields: [referrerId], references: [id]) //pengguna yang memberikan kode referral
-//   referrerId     Int
-//   referredUser   User     @relation(fields: [referredUserId], references: [id]) //pengguna yang menggunakan kode referral tersebut.
-//   referredUserId Int
-//   createdAt      DateTime @default(now())
-// }
+model DiscountVoucher {
+  id                 Int            @id @default(autoincrement())
+  user               User           @relation(fields: [userId], references: [id])
+  userId             Int
+  discountCoupon     String
+  discountPercentage Int
+  createdAt          DateTime       @default(now())
+  expired_date       DateTime
+  discount_status    DiscountStatus
+  EventItem          EventItem[]
+}
 
-model DiscountCoupon {
+model Points {
+  id           Int         @id @default(autoincrement())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       Int
+  points       Int         @default(0) //jumlah poin atau skor yang dimiliki pengguna, terkait dengan penggunaan kode referral.
+  createdAt    DateTime    @default(now())
+  expired_date DateTime
+  point_status PointStatus
+}
+
+model Event {
+  id                  Int           @id @default(autoincrement())
+  eventName           String        @unique
+  eventPrice          Int
+  eventImage          String        @db.LongText
+  eventOrganizer      String        @unique //biar gak ada event organizer dobel
+  eventImgOrganizer   String        @db.LongText
+  eventCategory       EventCategory
+  availableSeats      Int
+  contactPerson       String
+  contactPersonNumber String
+  eventDate           DateTime?
+  description         String?
+  location            String?
+  isPaid              Boolean       @default(false)
+  EventItem           EventItem[]
+  CartItem            CartItem[]
+  OrderItem           OrderItem[]
+  Review              Review[]
+}
+
+model EventItem {
+  id                Int             @id @default(autoincrement())
+  event             Event           @relation(fields: [eventId], references: [id])
+  eventId           Int
+  discountVoucher   DiscountVoucher @relation(fields: [discountVoucherId], references: [id])
+  discountVoucherId Int
+}
+
+model Cart {
+  id       Int        @id @default(autoincrement())
+  userId   Int        @unique
+  user     User       @relation(fields: [userId], references: [id])
+  discount Int? //ini terserah mau make kupon atau enggak
+  CartItem CartItem[]
+}
+
+model CartItem {
+  id       Int   @id @default(autoincrement())
+  cartId   Int
+  eventId  Int
+  quantity Int
+  cart     Cart  @relation(fields: [cartId], references: [id])
+  event    Event @relation(fields: [eventId], references: [id])
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  total       Int
+  status      StatusOrder
+  orderDate   DateTime    @default(now())
+  expiredDate DateTime    @default(now())
+  OrderItem   OrderItem[]
+  Payment     Payment?
+}
+
+model OrderItem {
+  id       Int   @id @default(autoincrement())
+  orderId  Int
+  eventId  Int
+  quantity Int
+  order    Order @relation(fields: [orderId], references: [id])
+  event    Event @relation(fields: [eventId], references: [id])
+}
+
+model Payment {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  imageUrl  String
+  orderId   Int      @unique
+  order     Order    @relation(fields: [orderId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
   userId    Int
-  discount  Int      @default(10) // 10% discount
-  expiresAt DateTime
+  eventId   Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id])
 }

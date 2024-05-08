@@ -30,5 +30,8 @@
     "hooks": {
       "pre-commit": "npx lint-staged"
     }
+  },
+  "dependencies": {
+    "nopt": "^7.2.1"
   }
 }

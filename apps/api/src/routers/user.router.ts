@@ -13,6 +13,7 @@ export class UserRouter {
 
     private initializeRoutes(): void {
         this.router.post('/', this.userController.createAccount)
+        this.router.post('/login', this.userController.loginAccount) 
     }
 
     getRouter(): Router {
