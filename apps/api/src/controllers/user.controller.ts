@@ -22,6 +22,7 @@ export class UserController {
           message: 'Username, email, and password are required fields',
         });
       }
+
   
       // Hash the password before storing in the database
       const salt = await genSalt(10);
@@ -31,12 +32,13 @@ export class UserController {
       const initials = username.slice(0, 3).toUpperCase();
       const randomNum = Math.floor(Math.random() * 1000);
       const myReferralCode = `${initials}${randomNum}`;
-  
+
       // Prepare user data to be saved
       let userData = {
         username,
         email,
         password: hashPassword,
+
         usedReferralCode,
       };
   
@@ -55,9 +57,11 @@ export class UserController {
             message: 'Invalid referral code',
           });
         }
+
   
         // Check if the user associated with the referral code exists
         const existingUser = await prisma.user.findUnique({
+
           where: {
             id: existingReferral.userId,
           },
@@ -86,6 +90,7 @@ export class UserController {
             point_status: 'Active',
           },
         });
+
   
         // Generate discount coupon for the new user
         const discountCode = `${usedReferralCode.slice(0, 3)}-${new Date().getFullYear()}-${new Date().getMonth() + 1}`.replace(/-/g, '');
@@ -115,6 +120,7 @@ export class UserController {
   
       // Create new user in the database
       const newUser = await prisma.user.create({
+
         data: userData,
         include: {
           discountVoucher: true, // Include related discountVoucher in the response
@@ -167,9 +173,11 @@ export class UserController {
       res.status(201).send({
         status: 'ok',
         message: 'User registered successfully',
+
         user: newUser,
         referral,
         discountVoucher: newUser.discountVoucher, // Include discount vouchers in the response
+
       });
     } catch (err) {
       console.error('Failed to register account:', err);
