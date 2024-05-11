@@ -50,24 +50,54 @@ enum EventCategory {
 }
 
 model User {
-  id                 Int                  @id @default(autoincrement())
-  username           String               @unique
-  email              String               @unique
-  password           String
-  usedReferralCode   String? // Kode referral yang digunakan saat registrasi
-  createdAt          DateTime             @default(now())
-  jenis_kelamin      Gender?
-  tanggal_lahir      DateTime?
-  nomor_telepon      String?
-  photo_profile      String?              @db.LongText
-  JWT_token          String?
-  activation         Boolean?              @default(false)
-  referral           Referral?
-  discountVoucher    DiscountVoucher[]
-  Points             Points[]
-  Cart               Cart?
-  Review             Review[]
+  <<<<<<< Updated upstream
+  id               Int              @id @default(autoincrement())
+  username         String           @unique
+  jenis_kelamin    Gender?
+  tanggal_lahir    DateTime?
+  nomor_telepon    String?
+  photo_profile    String?
+  email            String           @unique
+  password         String
+  role             Role?
+  myreferralCode   String //kode referral yang digunakan untuk mengidentifikasi referensi pengguna.
+  usedReferralCode String? // Kode referral yang digunakan saat registrasi
+  points           Int              @default(0) //jumlah poin atau skor yang dimiliki pengguna, terkait dengan penggunaan kode referral.
+  DiscountCoupon   DiscountCoupon[]
 }
+
+// model Referral {
+//   id             Int      @id @default(autoincrement())
+//   referrer       User     @relation(fields: [referrerId], references: [id]) //pengguna yang memberikan kode referral
+//   referrerId     Int
+//   referredUser   User     @relation(fields: [referredUserId], references: [id]) //pengguna yang menggunakan kode referral tersebut.
+//   referredUserId Int
+//   createdAt      DateTime @default(now())
+// }
+
+model DiscountCoupon {
+  id               Int               @id @default(autoincrement())
+  =======
+  id               Int               @id @default(autoincrement())
+  username         String            @unique
+  email            String            @unique
+  password         String
+  usedReferralCode String? // Kode referral yang digunakan saat registrasi
+  createdAt        DateTime          @default(now())
+  jenis_kelamin    Gender?
+  tanggal_lahir    DateTime?
+  nomor_telepon    String?
+  photo_profile    String?           @db.LongText
+  JWT_token        String?
+  activation       Boolean?          @default(false)
+  referral         Referral?
+  discountVoucher  DiscountVoucher[]
+  Points           Points[]
+  Cart             Cart?
+  Review           Review[]
+  Payment          Payment[]
+}
+
 model Referral {
   id             Int      @id @default(autoincrement())
   user           User     @relation(fields: [userId], references: [id])
@@ -86,6 +116,7 @@ model DiscountVoucher {
   expired_date       DateTime
   discount_status    DiscountStatus
   EventItem          EventItem[]
+  Payment            Payment[]
 }
 
 model Points {
@@ -109,10 +140,11 @@ model Event {
   availableSeats      Int
   contactPerson       String
   contactPersonNumber String
-  eventDate           DateTime?
-  description         String?
-  location            String?
+  eventDate           DateTime
+  description         String
+  location            String
   isPaid              Boolean       @default(false)
+  eventSlug           String        @unique
   EventItem           EventItem[]
   CartItem            CartItem[]
   OrderItem           OrderItem[]
@@ -165,20 +197,26 @@ model OrderItem {
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  imageUrl  String
-  orderId   Int      @unique
-  order     Order    @relation(fields: [orderId], references: [id])
+  id         Int              @id @default(autoincrement())
+  amount     Int
+  discountId Int?
+  discount   DiscountVoucher? @relation(fields: [discountId], references: [id])
+  createdAt  DateTime         @default(now())
+
+  orderId Int   @unique
+  order   Order @relation(fields: [orderId], references: [id])
+  userId  Int
+  user    User  @relation(fields: [userId], references: [id])
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
   userId    Int
   eventId   Int
-  rating    Int
+  rating    Float
   comment   String?
   createdAt DateTime @default(now())
+  >>>>>>> Stashed changes
   user      User     @relation(fields: [userId], references: [id])
   event     Event    @relation(fields: [eventId], references: [id])
 }
