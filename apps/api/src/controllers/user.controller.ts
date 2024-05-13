@@ -32,7 +32,7 @@ export class UserController {
       const payload = {
         id: users.id,
       };
-      const token = sign(payload, jwtKey!, { expiresIn: '1h' });
+      const token = sign(payload, jwtKey!, { expiresIn: '1d' });
       const link = `http://localhost:3000/verifikasi/${token}`;
 
       const templatePath = path.join(
@@ -82,7 +82,7 @@ export class UserController {
       const payload = {
         id: user.id,
       };
-      const token = sign(payload, jwtKey!, { expiresIn: '1d' });
+      const token = sign(payload, jwtKey!, { expiresIn: '10m' });
 
       res.status(200).send({
         status: 'OK',
@@ -100,7 +100,7 @@ export class UserController {
   async keepLogin(req: Request, res: Response) {
     try {
       const users = await prisma.user.findFirst({
-        where: { id: req?.user?.id },
+        where: { id: req.user?.id },
       });
       res.status(200).send({
         status: 'ok',
@@ -121,7 +121,7 @@ export class UserController {
           activation: true,
         },
         where: {
-          id: req?.user?.id,
+          id: req.user?.id,
         },
       });
       res.status(200).send({

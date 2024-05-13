@@ -5,7 +5,7 @@ export interface UserSlice {
     id: number | null;
     username: string;
     email: string;
-    image: string;
+    role: string;
   } | null;
 }
 
