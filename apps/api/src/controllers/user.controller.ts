@@ -71,9 +71,11 @@ export class UserController {
         id: newUser.id,
       };
 
+
       const token = sign(payload, process.env.KEY_JWT!);
       //Prepare email template
       const link = `http://localhost:3000/verify/${token}`;
+
 
       const templatePath = path.join(
         __dirname,
@@ -229,7 +231,7 @@ export class UserController {
       const payload = {
         id: user.id,
       };
-      const token = sign(payload, jwtKey!, { expiresIn: '1d' });
+      const token = sign(payload, jwtKey!, { expiresIn: '10m' });
 
       res.status(200).send({
         status: 'OK',
@@ -247,6 +249,7 @@ export class UserController {
   //keep log in
   async keepLogin(req: Request, res: Response) {
     try {
+
         const user = await prisma.user.findUnique({
             where: { id: req.user?.id },
             select: {
@@ -254,6 +257,7 @@ export class UserController {
             }
         })
         res.status(200).json(user)
+
     } catch (error) {
         res.status(400).json({
             status: "error",
@@ -293,6 +297,7 @@ export class UserController {
   async resetPassword(req: Request, res: Response) {
 
     try {
+
         const user = await prisma.user.findUnique({
             where: { email: req.body.email }
         })
@@ -323,6 +328,7 @@ export class UserController {
             status: 'error',
             message: err
         })
+
     }
   }
 
