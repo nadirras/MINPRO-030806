@@ -1,20 +1,21 @@
 import { Request, Response, NextFunction } from 'express'
 import { verify } from 'jsonwebtoken'
 
-export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-    try {
-        let token = req.headers.authorization?.replace("Bearer ", "")
-        if (!token) throw "Token Empty"
+export class UserMiddleware {
+    verifyToken(req: Request, res: Response, next: NextFunction) {
+        try {
+            let token = req.headers.authorization?.replace("Bearer ", "")
+            if (!token) throw "Token Empty"
 
-        const verifyUser = verify(token, process.env.KEY_JWT!)
-        req.user = verifyUser as User
+            const verifyUser = verify(token, process.env.KEY_JWT!)
+            req.user = verifyUser as User
 
-
-        next()
-    } catch (err) {
-        res.status(400).send({
-            status: 'error',
-            message: err
-        })
+            next()
+        } catch (err) {
+            res.status(400).json({
+                status: 'error',
+                message: err
+            })
+        }
     }
 }
