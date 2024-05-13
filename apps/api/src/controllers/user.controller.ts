@@ -68,7 +68,7 @@ export class UserController {
 
      
       const payload = {
-        id: users.id,
+        id: newUser.id,
       };
 
       const token = sign(payload, process.env.KEY_JWT!);
@@ -83,8 +83,8 @@ export class UserController {
       const templateSource = fs.readFileSync(templatePath, 'utf-8');
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
-        name: users.username,
-        link,
+        name: newUser.username,
+        link
       });
 
 
@@ -108,11 +108,10 @@ export class UserController {
 
       res.status(400).send({
         status: 'error',
-        message: error,
+        message: 'error',
       });
     }
   }
-
 
   //verify account
   async verifyAccount(req: Request, res: Response) {
@@ -205,22 +204,18 @@ export class UserController {
     }
   }
 
-=
   //login account
   async loginAccount(req: Request, res: Response) {
     try {
-      const { data, password } = req.body;
+      const { email, password } = req.body;
       const user = await prisma.user.findFirst({
         where: {
-          OR: [
-              { username: data },
-              { email: data }
-          ]
+          email: email.trim()
       }
       });
 
       if (user == null) throw 'User not found!';
-      if (user.activation === false) throw "Not active"
+      if (user.activation === false) throw "Not active, please check your email for verification your acount"
 
       const isValidPass = await compare(password, user.password);
       if (isValidPass == false) throw 'Wrong Password!';
@@ -249,7 +244,6 @@ export class UserController {
     }
   }
 
-
   //keep log in
   async keepLogin(req: Request, res: Response) {
     try {
@@ -265,25 +259,6 @@ export class UserController {
             status: "error",
             message: error
         });
-    }
-  }
-
-  //Resend Verification Email
-  async resendVerificationEmail(req: Request, res: Response) {
-    try {
-      const { email } = req.body;
-
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      // if(!user)
-    } catch (err) {
-      console.error('Failed to resend verification email:', err);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Failed to resend verification email',
-      });
     }
   }
 

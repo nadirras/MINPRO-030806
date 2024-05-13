@@ -24,15 +24,7 @@ export class UserRouter {
         // this.router.get('/updateEmail', this.userMiddleware.verifyToken, this.userController.updateEmail)
         // this.router.post('/updatePassword', this.userMiddleware.verifyToken, this.userController.updatePassword)
     }
-
-
-  private initializeRoutes(): void {
-    this.router.post('/', this.userController.createAccount);
-    this.router.post('/login', this.userController.loginAccount);
-    this.router.get('/keep-login', verifyToken, this.userController.keepLogin);
-    this.router.get('/verify', verifyToken, this.userController.verifyUser);
-  }
-
+    
   getRouter(): Router {
     return this.router;
   }
