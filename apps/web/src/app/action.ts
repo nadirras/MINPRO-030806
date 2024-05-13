@@ -10,4 +10,5 @@ export async function createToken(token: string, url: string = '/') {
 
 export async function deleteToken(key: string) {
   cookies().delete(key);
+
 }

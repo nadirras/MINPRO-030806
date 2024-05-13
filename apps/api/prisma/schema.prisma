@@ -50,24 +50,25 @@ enum EventCategory {
 }
 
 model User {
-  id                 Int                  @id @default(autoincrement())
-  username           String               @unique
-  email              String               @unique
-  password           String
-  usedReferralCode   String? // Kode referral yang digunakan saat registrasi
-  createdAt          DateTime             @default(now())
-  jenis_kelamin      Gender?
-  tanggal_lahir      DateTime?
-  nomor_telepon      String?
-  photo_profile      String?              @db.LongText
-  JWT_token          String?
-  activation         Boolean?              @default(false)
-  referral           Referral?
-  discountVoucher    DiscountVoucher[]
-  Points             Points[]
-  Cart               Cart?
-  Review             Review[]
+  id               Int               @id @default(autoincrement())
+  username         String            @unique
+  email            String            @unique
+  password         String
+  usedReferralCode String? // Kode referral yang digunakan saat registrasi
+  createdAt        DateTime          @default(now())
+  jenis_kelamin    Gender?
+  tanggal_lahir    DateTime?
+  nomor_telepon    String?
+  photo_profile    String?           @db.LongText
+  JWT_token        String?
+  activation       Boolean?          @default(false)
+  referral         Referral?
+  discountVoucher  DiscountVoucher[]
+  Points           Points[]
+  Cart             Cart?
+  Review           Review[]
 }
+
 model Referral {
   id             Int      @id @default(autoincrement())
   user           User     @relation(fields: [userId], references: [id])

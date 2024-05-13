@@ -6,7 +6,12 @@ import path from 'path';
 import fs from 'fs';
 import handlebars from 'handlebars';
 import { transporter } from '../helpers/nodemailer';
+import dotenv from 'dotenv';
 // import multer from 'multer'
+dotenv.config();
+const databaseUrl = process.env.DATABASE_URL;
+const jwtKey = process.env.KEY_JWT;
+const mailUser = process.env.MAIL_USER;
 
 const prisma = new PrismaClient();
 
@@ -21,6 +26,7 @@ export class UserController {
   //create account
   async createAccount(req: Request, res: Response) {
     try {
+
       const { username, email, password, usedReferralCode } = req.body;
 
       //check if required fields are provided
@@ -60,14 +66,15 @@ export class UserController {
         },
       });
 
-      //Generate JWT token
+     
       const payload = {
-        id: newUser.id,
+        id: users.id,
       };
 
       const token = sign(payload, process.env.KEY_JWT!);
       //Prepare email template
       const link = `http://localhost:3000/verify/${token}`;
+
       const templatePath = path.join(
         __dirname,
         '../templates',
@@ -76,9 +83,10 @@ export class UserController {
       const templateSource = fs.readFileSync(templatePath, 'utf-8');
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
-        name: newUser.username,
+        name: users.username,
         link,
       });
+
 
       //Send registration email
       await transporter.sendMail({
@@ -97,12 +105,14 @@ export class UserController {
       });
     } catch (err) {
       console.error('Failed to register account', err);
+
       res.status(400).send({
         status: 'error',
-        message: 'Failed to register account',
+        message: error,
       });
     }
   }
+
 
   //verify account
   async verifyAccount(req: Request, res: Response) {
@@ -195,6 +205,7 @@ export class UserController {
     }
   }
 
+=
   //login account
   async loginAccount(req: Request, res: Response) {
     try {
@@ -223,7 +234,7 @@ export class UserController {
       const payload = {
         id: user.id,
       };
-      const token = sign(payload, process.env.KEY_JWT!, { expiresIn: '1d' });
+      const token = sign(payload, jwtKey!, { expiresIn: '1d' });
 
       res.status(200).send({
         status: 'OK',
@@ -237,6 +248,7 @@ export class UserController {
       });
     }
   }
+
 
   //keep log in
   async keepLogin(req: Request, res: Response) {
@@ -304,6 +316,7 @@ export class UserController {
 
   //Reset Password 
   async resetPassword(req: Request, res: Response) {
+
     try {
         const user = await prisma.user.findUnique({
             where: { email: req.body.email }

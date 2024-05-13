@@ -1,3 +1,4 @@
+
 import { UserController } from "@/controllers/user.controller";
 import { Router } from "express";
 import { UserMiddleware } from "@/middlewares/user.middleware";
@@ -24,7 +25,15 @@ export class UserRouter {
         // this.router.post('/updatePassword', this.userMiddleware.verifyToken, this.userController.updatePassword)
     }
 
-    getRouter(): Router {
-        return this.router;
-      }
+
+  private initializeRoutes(): void {
+    this.router.post('/', this.userController.createAccount);
+    this.router.post('/login', this.userController.loginAccount);
+    this.router.get('/keep-login', verifyToken, this.userController.keepLogin);
+    this.router.get('/verify', verifyToken, this.userController.verifyUser);
+  }
+
+  getRouter(): Router {
+    return this.router;
+  }
 }

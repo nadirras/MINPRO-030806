@@ -4,6 +4,7 @@ import { Fira_Sans } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { StoreProvider } from './storeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 const fira_sans = Fira_Sans({
@@ -24,8 +25,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={fira_sans.className}>{children}</body>
-    </html>
+    <StoreProvider>
+      <html lang="en">
+        <body className={fira_sans.className}>{children}</body>
+      </html>
+    </StoreProvider>
   );
 }

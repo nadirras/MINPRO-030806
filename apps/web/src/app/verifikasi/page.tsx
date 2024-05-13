@@ -7,4 +7,6 @@ export default function VerificationPage() {
       <Verifikasi />
     </div>
   );
+
 }
+

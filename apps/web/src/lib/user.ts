@@ -1,4 +1,5 @@
 export const regUser = async (data: any) => {
+
     const res = await fetch(`http://localhost:8000/api/users`, {
       method: 'POST',
       body: JSON.stringify(data),
