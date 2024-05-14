@@ -109,6 +109,20 @@ a {
   grid-template-columns: 2fr 1fr;
   gap: 1rem;
 }
+
+.grid-profile {
+  display: grid;
+  place-content: center;
+  grid-template-columns: 1fr 4fr;
+  gap: 1rem;
+}
+
+.biodata-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
@@ -126,6 +140,16 @@ a {
   .search-bar {
     width: 5rem;
   }
+  .grid-profile {
+    display: flex !important;
+    flex-direction: column !important;
+    margin-top: 5rem;
+    margin-bottom: 5rem;
+  }
+  .isi-biodata-grid {
+    display: flex !important;
+    justify-content: space-between !important;
+  }
 }
 
 @media (max-width: 850px) {
@@ -137,5 +161,10 @@ a {
   }
   .search-bar {
     width: 8rem;
+  }
+  .biodata-grid {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
   }
 }

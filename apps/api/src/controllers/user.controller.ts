@@ -26,7 +26,6 @@ export class UserController {
   //create account
   async createAccount(req: Request, res: Response) {
     try {
-
       const { username, email, password, usedReferralCode } = req.body;
 
       //check if required fields are provided
@@ -66,16 +65,13 @@ export class UserController {
         },
       });
 
-     
       const payload = {
         id: newUser.id,
       };
 
-
       const token = sign(payload, process.env.KEY_JWT!);
       //Prepare email template
-      const link = `http://localhost:3000/verify/${token}`;
-
+      const link = `http://localhost:3000/verifikasi/${token}`;
 
       const templatePath = path.join(
         __dirname,
@@ -86,9 +82,8 @@ export class UserController {
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
         name: newUser.username,
-        link
+        link,
       });
-
 
       //Send registration email
       await transporter.sendMail({
@@ -134,8 +129,7 @@ export class UserController {
       // Update user activation status to true
       const updateUser = await prisma.user.update({
         where: { id: verifyUser.id },
-        data: { activation: true, 
-         },
+        data: { activation: true },
       });
 
       // Generate referral code for the user
@@ -212,12 +206,13 @@ export class UserController {
       const { email, password } = req.body;
       const user = await prisma.user.findFirst({
         where: {
-          email: email.trim()
-      }
+          email: email.trim(),
+        },
       });
 
       if (user == null) throw 'User not found!';
-      if (user.activation === false) throw "Not active, please check your email for verification your acount"
+      if (user.activation === false)
+        throw 'Not active, please check your email for verification your acount';
 
       const isValidPass = await compare(password, user.password);
       if (isValidPass == false) throw 'Wrong Password!';
@@ -231,7 +226,7 @@ export class UserController {
       const payload = {
         id: user.id,
       };
-      const token = sign(payload, jwtKey!, { expiresIn: '10m' });
+      const token = sign(payload, jwtKey!, { expiresIn: '1d' });
 
       res.status(200).send({
         status: 'OK',
@@ -249,24 +244,29 @@ export class UserController {
   //keep log in
   async keepLogin(req: Request, res: Response) {
     try {
-
-        const user = await prisma.user.findUnique({
-            where: { id: req.user?.id },
-            select: {
-                id: true, username: true
-            }
-        })
-        res.status(200).json(user)
-
+      const user = await prisma.user.findUnique({
+        where: { id: req.user?.id },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          jenis_kelamin: true,
+          tanggal_lahir: true,
+          nomor_telepon: true,
+          photo_profile: true,
+          referral: true,
+        },
+      });
+      res.status(200).json(user);
     } catch (error) {
-        res.status(400).json({
-            status: "error",
-            message: error
-        });
+      res.status(400).json({
+        status: 'error',
+        message: error,
+      });
     }
   }
 
-  //Update Email 
+  //Update Email
   // async updateEmail(req: Request, res: Response) {
   //   try {
   //       const validate = await prisma.user.findUnique({
@@ -293,42 +293,43 @@ export class UserController {
   //   }
   // }
 
-  //Reset Password 
+  //Reset Password
   async resetPassword(req: Request, res: Response) {
-
     try {
+      const user = await prisma.user.findUnique({
+        where: { email: req.body.email },
+      });
+      if (!user) throw 'Account not found';
+      const payload = {
+        id: user?.id,
+        email: user?.email,
+      };
+      const token = sign(payload, process.env.KEY_JWT!, { expiresIn: '1h' });
+      const link = `http://localhost:3000/verifikasi/forget_password/update/${token}`;
+      const templatePath = path.join(
+        __dirname,
+        '../templates',
+        'resetPassword.html',
+      );
+      const templateSource = fs.readFileSync(templatePath, 'utf-8');
+      const compiledTemplate = handlebars.compile(templateSource);
+      const html = compiledTemplate({
+        name: user?.username,
+        link,
+      });
 
-        const user = await prisma.user.findUnique({
-            where: { email: req.body.email }
-        })
-        if (!user) throw 'Account not found'
-        const payload = {
-            id: user?.id,
-            email: user?.email
-        }
-        const token = sign(payload, process.env.KEY_JWT!, { expiresIn: '1h' })
-        const link = `http://localhost:3000/verify/forget_password/update/${token}`
-        const templatePath = path.join(__dirname, "../templates", "resetPassword.html")
-        const templateSource = fs.readFileSync(templatePath, 'utf-8')
-        const compiledTemplate = handlebars.compile(templateSource)
-        const html = compiledTemplate({
-            name: user?.username,
-            link
-        })
-
-        await transporter.sendMail({
-            from: process.env.MAIL_USER!,
-            to: req.body.email,
-            subject: "Reset password confirmation",
-            html
-        })
-        res.status(200).json({status: 'ok', message: 'email sended'})
+      await transporter.sendMail({
+        from: process.env.MAIL_USER!,
+        to: req.body.email,
+        subject: 'Reset password confirmation',
+        html,
+      });
+      res.status(200).json({ status: 'ok', message: 'email sended' });
     } catch (err) {
-        res.status(400).json({
-            status: 'error',
-            message: err
-        })
-
+      res.status(400).json({
+        status: 'error',
+        message: err,
+      });
     }
   }
 
@@ -337,7 +338,7 @@ export class UserController {
   //   try {
   //       const {password, confirm} = req.body
   //       if (password !== confirm) throw 'Invalid confirmation'
-        
+
   //       const salt = await genSalt(10)
   //       const hashPassword = await hash(password, salt)
 
@@ -354,4 +355,27 @@ export class UserController {
   //       })
   //   }
   // }
+
+  //upload image
+  async imageUser(req: Request, res: Response) {
+    try {
+      const { file } = req;
+      if (!file) throw 'No File Uploaded';
+      const imageUrl = `http://localhost:8000/public/images/${file.filename}`;
+
+      await prisma.user.update({
+        data: {
+          photo_profile: imageUrl,
+        },
+        where: {
+          id: req.user?.id,
+        },
+      });
+    } catch (error) {
+      res.status(400).send({
+        status: 'error',
+        error,
+      });
+    }
+  }
 }

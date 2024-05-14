@@ -5,7 +5,6 @@ export interface UserSlice {
     id: number | null;
     username: string;
     email: string;
-    role: string;
   } | null;
 }
 
@@ -23,4 +22,3 @@ export const userSlice = createSlice({
 });
 
 export const { setUser } = userSlice.actions;
-
