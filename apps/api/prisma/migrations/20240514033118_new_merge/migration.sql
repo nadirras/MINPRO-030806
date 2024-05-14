@@ -41,17 +41,6 @@ CREATE TABLE `UserDetail` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `UserRole` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `userId` INTEGER NOT NULL,
-    `role` ENUM('EventCreator', 'Pembeli') NOT NULL,
-    `updateAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    UNIQUE INDEX `UserRole_userId_key`(`userId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `Referral` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `userId` INTEGER NOT NULL,
@@ -106,6 +95,7 @@ CREATE TABLE `Event` (
     `eventOrganizerId` INTEGER NOT NULL,
     `eventCategory` ENUM('Festival', 'Attraction', 'Workshop', 'Seminar') NOT NULL,
     `eventName` VARCHAR(191) NOT NULL,
+    `eventSlug` VARCHAR(191) NOT NULL,
     `eventImage` LONGTEXT NOT NULL,
     `description` LONGTEXT NULL,
     `availableSeats` INTEGER NOT NULL,
@@ -116,6 +106,7 @@ CREATE TABLE `Event` (
     `location` VARCHAR(191) NULL,
 
     UNIQUE INDEX `Event_eventName_key`(`eventName`),
+    UNIQUE INDEX `Event_eventSlug_key`(`eventSlug`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -208,9 +199,6 @@ CREATE TABLE `Review` (
 ALTER TABLE `UserDetail` ADD CONSTRAINT `UserDetail_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `UserRole` ADD CONSTRAINT `UserRole_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `Referral` ADD CONSTRAINT `Referral_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -218,9 +206,6 @@ ALTER TABLE `DiscountVoucher` ADD CONSTRAINT `DiscountVoucher_userId_fkey` FOREI
 
 -- AddForeignKey
 ALTER TABLE `Points` ADD CONSTRAINT `Points_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `EventOrganizer` ADD CONSTRAINT `EventOrganizer_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `UserRole`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Event` ADD CONSTRAINT `Event_eventOrganizerId_fkey` FOREIGN KEY (`eventOrganizerId`) REFERENCES `EventOrganizer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
