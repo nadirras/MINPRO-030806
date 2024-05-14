@@ -7,21 +7,14 @@ import fs from 'fs';
 import handlebars from 'handlebars';
 import { transporter } from '../helpers/nodemailer';
 import dotenv from 'dotenv';
-// import multer from 'multer'
+import multer from 'multer';
 dotenv.config();
-const databaseUrl = process.env.DATABASE_URL;
+// const databaseUrl = process.env.DATABASE_URL;
 const jwtKey = process.env.KEY_JWT;
-const mailUser = process.env.MAIL_USER;
+// const mailUser = process.env.MAIL_USER;
 
 const prisma = new PrismaClient();
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  password: string;
-  usedReferralCode?: string;
-}
 export class UserController {
   //create account
   async createAccount(req: Request, res: Response) {
@@ -246,18 +239,20 @@ export class UserController {
     try {
       const user = await prisma.user.findUnique({
         where: { id: req.user?.id },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          jenis_kelamin: true,
-          tanggal_lahir: true,
-          nomor_telepon: true,
-          photo_profile: true,
-          referral: true,
-        },
+        include: { UserDetail: true }, // Use 'UserDetail' instead of 'userDetail'
       });
-      res.status(200).json(user);
+
+      if (!user) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'User not found',
+        });
+      }
+
+      res.status(200).json({
+        status: 'success',
+        user,
+      });
     } catch (error) {
       res.status(400).json({
         status: 'error',
@@ -266,46 +261,97 @@ export class UserController {
     }
   }
 
-  //Update Email
-  // async updateEmail(req: Request, res: Response) {
-  //   try {
-  //       const validate = await prisma.user.findUnique({
-  //           where: { email: req.user?.email}
-  //       })
-  //       if (validate) throw 'Email has been used with another account'
-  //       await prisma.user.update({
-  //           data: {
-  //               email: req.user?.email
-  //           },
-  //           where: {
-  //               id: req.user?.id
-  //           }
-  //       })
-  //       res.status(200).json({
-  //           status: 'ok',
-  //           message: 'Update Email Success'
-  //       })
-  //   } catch (err) {
-  //       res.status(400).json({
-  //           status: 'error',
-  //           message: err
-  //       })
-  //   }
-  // }
+  //update profile
+  async updateProfile(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
 
-  //Reset Password
-  async resetPassword(req: Request, res: Response) {
+      if (!userId) {
+        throw new Error('User ID not found in request.');
+      }
+
+      console.log(req.file);
+
+      const {
+        nama_depan,
+        nama_belakang,
+        jenis_kelamin,
+        tanggal_lahir,
+        nomor_telepon,
+      } = req.body;
+      const imageUrl = req.file
+        ? `http://localhost:8000/public/images/${req.file.filename}`
+        : null;
+
+      // Validasi format tanggal_lahir (YYYY-MM-DD)
+      if (!tanggal_lahir || !/^(\d{4})-(\d{2})-(\d{2})$/.test(tanggal_lahir)) {
+        throw new Error('Tanggal lahir harus diisi dalam format YYYY-MM-DD.');
+      }
+
+      console.log(req.body);
+      // Update user profile in database
+      const updateUserDetail = await prisma.userDetail.upsert({
+        where: { userId },
+        update: {
+          nama_depan,
+          nama_belakang,
+          jenis_kelamin,
+          tanggal_lahir: new Date(tanggal_lahir),
+          nomor_telepon,
+          photo_profile: imageUrl,
+        },
+        create: {
+          userId,
+          nama_depan,
+          nama_belakang,
+          jenis_kelamin,
+          tanggal_lahir: new Date(tanggal_lahir),
+          nomor_telepon,
+          photo_profile: imageUrl,
+        },
+      });
+
+      // Dapatkan informasi username dan email dari entitas User terkait
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true, email: true },
+      });
+
+      if (!user) {
+        throw new Error('User not found.');
+      }
+
+      const { username, email } = user;
+
+      res.status(200).send({
+        status: 'OK',
+        message: 'Profile updated successfully',
+        userDetail: updateUserDetail,
+        username,
+        email,
+      });
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      res.status(400).send({
+        status: 'error',
+        message: 'Failed to update profile',
+      });
+    }
+  }
+
+  //forgot password
+  async forgotPassword(req: Request, res: Response) {
+    const { email } = req.body;
     try {
       const user = await prisma.user.findUnique({
-        where: { email: req.body.email },
+        where: { email },
       });
-      if (!user) throw 'Account not found';
-      const payload = {
-        id: user?.id,
-        email: user?.email,
-      };
-      const token = sign(payload, process.env.KEY_JWT!, { expiresIn: '1h' });
-      const link = `http://localhost:3000/verifikasi/forget_password/update/${token}`;
+
+      if (!user) {
+        return res.status(404).send({ message: 'Email not found.' });
+      }
+
+      //Send email reset password
       const templatePath = path.join(
         __dirname,
         '../templates',
@@ -314,67 +360,203 @@ export class UserController {
       const templateSource = fs.readFileSync(templatePath, 'utf-8');
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
-        name: user?.username,
-        link,
+        name: user.username,
       });
 
+      //Send registration email
       await transporter.sendMail({
-        from: process.env.MAIL_USER!,
-        to: req.body.email,
-        subject: 'Reset password confirmation',
+        from: 'diahnof@gmail.com',
+        to: user.email,
+        subject: 'Reset your password in Zenith Tiket',
         html,
       });
-      res.status(200).json({ status: 'ok', message: 'email sended' });
+
+      //Send response
+      res.status(201).send({
+        status: 'OK',
+        message: 'Reset password link sent to your email.',
+        email,
+      });
     } catch (err) {
       res.status(400).json({
         status: 'error',
-        message: err,
+        message: 'Failed to send reset password email.',
       });
     }
   }
 
-  //Update Password
-  // async updatePassword(req: Request, res: Response) {
-  //   try {
-  //       const {password, confirm} = req.body
-  //       if (password !== confirm) throw 'Invalid confirmation'
+  //reset password
+  async resetPassword(req: Request, res: Response) {
+    const { email, newPassword } = req.body;
 
-  //       const salt = await genSalt(10)
-  //       const hashPassword = await hash(password, salt)
-
-  //       await prisma.user.update({
-  //           data: {password: hashPassword},
-  //           where: { email: req.user?.email}
-  //       })
-
-  //       res.status(200).json({status: 'ok', message: 'User updated'})
-  //   } catch (err) {
-  //       res.status(400).json({
-  //           status: 'error',
-  //           message: err
-  //       })
-  //   }
-  // }
-
-  //upload image
-  async imageUser(req: Request, res: Response) {
     try {
-      const { file } = req;
-      if (!file) throw 'No File Uploaded';
-      const imageUrl = `http://localhost:8000/public/images/${file.filename}`;
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
 
-      await prisma.user.update({
+      if (!user) {
+        return res.status(404).send({ message: 'Email not found.' });
+      }
+
+      // Hash password baru sebelum menyimpan ke database
+      const hashPassword = await hash(newPassword, 10);
+
+      // Update password user
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
         data: {
-          photo_profile: imageUrl,
-        },
-        where: {
-          id: req.user?.id,
+          password: hashPassword,
         },
       });
+
+      //Send email confirmation reset password
+      const templatePath = path.join(
+        __dirname,
+        '../templates',
+        'conformationResetPassword.html',
+      );
+      const templateSource = fs.readFileSync(templatePath, 'utf-8');
+      const compiledTemplate = handlebars.compile(templateSource);
+      const html = compiledTemplate({
+        name: user.username,
+      });
+
+      //Send registration email
+      await transporter.sendMail({
+        from: 'diahnof@gmail.com',
+        to: user.email,
+        subject: 'Confirmation Reset Password',
+        html,
+      });
+
+      res.status(200).send({
+        status: 'OK',
+        message: 'Your password has been reset!',
+        updatedUser,
+      });
     } catch (error) {
-      res.status(400).send({
+      console.error('Failed to reset password:', error);
+      res.status(500).send({ message: 'Failed to reset password.' });
+    }
+  }
+
+  //change email
+  async changeEmail(req: Request, res: Response) {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'User ID not found in request.' });
+    }
+
+    const { newEmail, username } = req.body;
+
+    if (!newEmail) {
+      return res
+        .status(400)
+        .json({ message: 'New email address is required.' });
+    }
+
+    try {
+      // Find the user based on ID
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+
+      // Check existing email
+      const existingUser = await prisma.user.findUnique({
+        where: {
+          email: newEmail,
+        },
+      });
+
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email is already in use.' });
+      }
+
+      // Update the user's email
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          username,
+          email: newEmail,
+        },
+      });
+
+      //Send email confirmation change email
+      const templatePath = path.join(
+        __dirname,
+        '../templates',
+        'verifyChangeEmail.html',
+      );
+      const templateSource = fs.readFileSync(templatePath, 'utf-8');
+      const compiledTemplate = handlebars.compile(templateSource);
+      const html = compiledTemplate({
+        name: user.username,
+      });
+
+      //Send registration email
+      await transporter.sendMail({
+        from: 'diahnof@gmail.com',
+        to: user.email,
+        subject: 'Change Email Confirmation',
+        html,
+      });
+
+      // Send success response
+      res.status(200).json({
+        status: 'OK',
+        message: 'Email updated successfully.',
+        user: updatedUser,
+      });
+    } catch (error) {
+      console.error('Failed to change email:', error);
+      res.status(500).json({ message: 'Failed to change email.' });
+    }
+  }
+
+  //Get data by Id
+  async GetDataById(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id, 10);
+
+      if (isNaN(id)) {
+        return res
+          .status(400)
+          .json({ status: 'error', message: 'Invalid user ID' });
+      }
+
+      // Use Prisma to fetch all related data from different tables
+      const userData = await prisma.user.findUnique({
+        where: { id },
+        include: {
+          UserDetail: true,
+          referral: true,
+          discountVoucher: true,
+          Points: true,
+        },
+      });
+
+      // Check if userData is found
+      if (!userData) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'User not found',
+        });
+      }
+
+      res.status(200).json({
+        status: 'success',
+        userData,
+      });
+    } catch (error) {
+      console.error('Error fetching user data by ID:', error);
+      res.status(500).json({
         status: 'error',
-        error,
+        message: 'Failed to fetch user data',
       });
     }
   }

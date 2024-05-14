@@ -18,15 +18,25 @@ CREATE TABLE `User` (
     `password` VARCHAR(191) NOT NULL,
     `usedReferralCode` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `jenis_kelamin` ENUM('Laki_laki', 'Perempuan') NULL,
-    `tanggal_lahir` DATETIME(3) NULL,
-    `nomor_telepon` VARCHAR(191) NULL,
-    `photo_profile` LONGTEXT NULL,
-    `JWT_token` VARCHAR(191) NULL,
     `activation` BOOLEAN NULL DEFAULT false,
 
     UNIQUE INDEX `User_username_key`(`username`),
     UNIQUE INDEX `User_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `UserDetail` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `userId` INTEGER NOT NULL,
+    `nama_depan` VARCHAR(191) NOT NULL,
+    `nama_belakang` VARCHAR(191) NOT NULL,
+    `jenis_kelamin` ENUM('Laki_laki', 'Perempuan') NOT NULL,
+    `tanggal_lahir` DATETIME(3) NOT NULL,
+    `nomor_telepon` VARCHAR(191) NOT NULL,
+    `photo_profile` LONGTEXT NULL,
+
+    UNIQUE INDEX `UserDetail_userId_key`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -67,24 +77,47 @@ CREATE TABLE `Points` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Event` (
+CREATE TABLE `EventOrganizer` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `eventName` VARCHAR(191) NOT NULL,
-    `eventPrice` INTEGER NOT NULL,
-    `eventImage` LONGTEXT NOT NULL,
+    `userId` INTEGER NOT NULL,
     `eventOrganizer` VARCHAR(191) NOT NULL,
     `eventImgOrganizer` LONGTEXT NOT NULL,
-    `eventCategory` ENUM('Festival', 'Attraction', 'Workshop', 'Seminar') NOT NULL,
-    `availableSeats` INTEGER NOT NULL,
     `contactPerson` VARCHAR(191) NOT NULL,
     `contactPersonNumber` VARCHAR(191) NOT NULL,
-    `eventDate` DATETIME(3) NULL,
-    `description` VARCHAR(191) NULL,
+
+    UNIQUE INDEX `EventOrganizer_eventOrganizer_key`(`eventOrganizer`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Event` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `eventOrganizerId` INTEGER NOT NULL,
+    `eventCategory` ENUM('Festival', 'Attraction', 'Workshop', 'Seminar') NOT NULL,
+    `eventName` VARCHAR(191) NOT NULL,
+    `eventSlug` VARCHAR(191) NOT NULL,
+    `eventImage` LONGTEXT NOT NULL,
+    `description` LONGTEXT NULL,
+    `availableSeats` INTEGER NOT NULL,
+    `startDate` DATETIME(3) NULL,
+    `endDate` DATETIME(3) NULL,
+    `startTime` VARCHAR(191) NOT NULL,
+    `endTime` VARCHAR(191) NOT NULL,
     `location` VARCHAR(191) NULL,
-    `isPaid` BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE INDEX `Event_eventName_key`(`eventName`),
-    UNIQUE INDEX `Event_eventOrganizer_key`(`eventOrganizer`),
+    UNIQUE INDEX `Event_eventSlug_key`(`eventSlug`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `EventPrice` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `eventId` INTEGER NOT NULL,
+    `isPaid` BOOLEAN NOT NULL DEFAULT false,
+    `ticketPrice` INTEGER NOT NULL,
+
+    UNIQUE INDEX `EventPrice_eventId_key`(`eventId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -163,6 +196,9 @@ CREATE TABLE `Review` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
+ALTER TABLE `UserDetail` ADD CONSTRAINT `UserDetail_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Referral` ADD CONSTRAINT `Referral_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -170,6 +206,12 @@ ALTER TABLE `DiscountVoucher` ADD CONSTRAINT `DiscountVoucher_userId_fkey` FOREI
 
 -- AddForeignKey
 ALTER TABLE `Points` ADD CONSTRAINT `Points_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Event` ADD CONSTRAINT `Event_eventOrganizerId_fkey` FOREIGN KEY (`eventOrganizerId`) REFERENCES `EventOrganizer`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `EventPrice` ADD CONSTRAINT `EventPrice_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `EventItem` ADD CONSTRAINT `EventItem_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -194,9 +236,6 @@ ALTER TABLE `OrderItem` ADD CONSTRAINT `OrderItem_eventId_fkey` FOREIGN KEY (`ev
 
 -- AddForeignKey
 ALTER TABLE `Payment` ADD CONSTRAINT `Payment_orderId_fkey` FOREIGN KEY (`orderId`) REFERENCES `Order`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Review` ADD CONSTRAINT `Review_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Review` ADD CONSTRAINT `Review_eventId_fkey` FOREIGN KEY (`eventId`) REFERENCES `Event`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
