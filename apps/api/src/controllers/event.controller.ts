@@ -1,13 +1,25 @@
 import { Request, Response } from 'express';
-import prisma from '@/prisma';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 export class EventController {
+  //Get Event Data
   async getEvent(req: Request, res: Response) {
-    const eventData = await prisma.event.findMany();
-
-    return res.status(200).send(eventData);
+    try {
+      const eventData = await prisma.event.findMany();
+      res.status(200).send({
+        status: 'OK',
+        eventData
+    })
+    } catch (error) {
+      res.status(400).send({
+        status: 'error',
+        message: error,
+      });
+    }
   }
 
+  //Create Event
   async createEvent(req: Request, res: Response) {
     try {
       const slug = req.body.title.toLowerCase().replaceAll(' ', '-');
@@ -16,7 +28,7 @@ export class EventController {
         data: req.body,
       });
       res.status(201).send({
-        status: 'ok',
+        status: 'OK',
         message: 'Event Created!',
       });
     } catch (err) {
@@ -27,6 +39,7 @@ export class EventController {
     }
   }
 
+  //Get Data by slug
   async getEventSlug(req: Request, res: Response) {
     try {
       const events = await prisma.event.findUnique({
@@ -46,6 +59,7 @@ export class EventController {
     }
   }
 
+  //Book Ticket
   async bookTicket(req: Request, res: Response) {
     const eventId = +req.body.eventId;
     const numberOfTickets = +req.body.numberOfTickets;

@@ -2,6 +2,7 @@
 import { UserController } from "@/controllers/user.controller";
 import { Router } from "express";
 import { UserMiddleware } from "@/middlewares/user.middleware";
+import { uploader } from "@/helpers/uploader";
 
 export class UserRouter {
     private router: Router;
@@ -18,13 +19,15 @@ export class UserRouter {
     private initializeRoutes(): void {
         this.router.post('/', this.userController.createAccount)
         this.router.post('/login', this.userController.loginAccount) 
-        this.router.post('/resetPassword', this.userController.resetPassword)
-        this.router.get('/verify', this.userController.verifyAccount) 
+        this.router.post('/forgot-password', this.userController.forgotPassword) 
+        this.router.post('/reset-password', this.userController.resetPassword) 
+        this.router.post('/change-email',this.userMiddleware.verifyToken, this.userController.changeEmail)
+        this.router.get('/verify',this.userMiddleware.verifyToken, this.userController.verifyAccount) 
         this.router.get('/keep-login', this.userMiddleware.verifyToken, this.userController.keepLogin)
-        // this.router.get('/updateEmail', this.userMiddleware.verifyToken, this.userController.updateEmail)
-        // this.router.post('/updatePassword', this.userMiddleware.verifyToken, this.userController.updatePassword)
+        this.router.patch('/:id', uploader("","/images").single('file'),this.userMiddleware.verifyToken, this.userController.updateProfile)
+        this.router.get('/:id', this.userController.GetDataById)
     }
-    
+
   getRouter(): Router {
     return this.router;
   }

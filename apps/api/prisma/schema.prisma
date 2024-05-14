@@ -25,6 +25,11 @@ enum Gender {
   Perempuan
 }
 
+enum Role {
+  EventCreator
+  Pembeli
+}
+
 enum DiscountStatus {
   Active
   Expired
@@ -56,17 +61,24 @@ model User {
   password         String
   usedReferralCode String? // Kode referral yang digunakan saat registrasi
   createdAt        DateTime          @default(now())
-  jenis_kelamin    Gender?
-  tanggal_lahir    DateTime?
-  nomor_telepon    String?
-  photo_profile    String?           @db.LongText
-  JWT_token        String?
   activation       Boolean?          @default(false)
   referral         Referral?
+  UserDetail       UserDetail?
   discountVoucher  DiscountVoucher[]
   Points           Points[]
   Cart             Cart?
-  Review           Review[]
+}
+
+model UserDetail {
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int      @unique
+  nama_depan    String
+  nama_belakang String
+  jenis_kelamin Gender
+  tanggal_lahir DateTime
+  nomor_telepon String
+  photo_profile String?  @db.LongText
 }
 
 model Referral {
@@ -99,25 +111,44 @@ model Points {
   point_status PointStatus
 }
 
-model Event {
-  id                  Int           @id @default(autoincrement())
-  eventName           String        @unique
-  eventPrice          Int
-  eventImage          String        @db.LongText
-  eventOrganizer      String        @unique //biar gak ada event organizer dobel
-  eventImgOrganizer   String        @db.LongText
-  eventCategory       EventCategory
-  availableSeats      Int
+model EventOrganizer {
+  id                  Int     @id @default(autoincrement())
+  userId              Int
+  eventOrganizer      String  @unique //biar gak ada event organizer dobel
+  eventImgOrganizer   String  @db.LongText
   contactPerson       String
   contactPersonNumber String
-  eventDate           DateTime?
-  description         String?
-  location            String?
-  isPaid              Boolean       @default(false)
-  EventItem           EventItem[]
-  CartItem            CartItem[]
-  OrderItem           OrderItem[]
-  Review              Review[]
+  DetailEvent         Event[]
+}
+
+model Event {
+  id               Int            @id @default(autoincrement())
+  eventOrganizer   EventOrganizer @relation(fields: [eventOrganizerId], references: [id])
+  eventOrganizerId Int
+  eventCategory    EventCategory
+  eventName        String         @unique
+  eventSlug        String         @unique
+  eventImage       String         @db.LongText
+  description      String?        @db.LongText
+  availableSeats   Int
+  startDate        DateTime?
+  endDate          DateTime?
+  startTime        String
+  endTime          String
+  location         String?
+  EventItem        EventItem[]
+  CartItem         CartItem[]
+  OrderItem        OrderItem[]
+  Review           Review[]
+  EventPrice       EventPrice?
+}
+
+model EventPrice {
+  id          Int     @id @default(autoincrement())
+  event       Event   @relation(fields: [eventId], references: [id])
+  eventId     Int     @unique
+  isPaid      Boolean @default(false)
+  ticketPrice Int
 }
 
 model EventItem {
@@ -180,6 +211,5 @@ model Review {
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
   event     Event    @relation(fields: [eventId], references: [id])
 }
