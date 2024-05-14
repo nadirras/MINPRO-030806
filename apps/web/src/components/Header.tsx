@@ -78,7 +78,7 @@ export const Header = () => {
                   <Link href="/tentang">Tentang Kami</Link>
                 </li>
                 <li>
-                  <Link href="/event-creator">Buat Event</Link>
+                  <Link href="/event-creator">Event Saya</Link>
                 </li>
               </ul>
               <label
@@ -121,9 +121,6 @@ export const Header = () => {
                   className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
                 >
                   <li>
-                    <Link href="/event-creator">Beralih ke Event Creator</Link>
-                  </li>
-                  <li>
                     <Link href="/">Beranda</Link>
                   </li>
                   <li>
@@ -133,7 +130,10 @@ export const Header = () => {
                     <Link href="/keranjang">Keranjang</Link>
                   </li>
                   <li>
-                    <a className="justify-between">Profile</a>
+                    <Link href="/event-creator">Event Saya</Link>
+                  </li>
+                  <li>
+                    <Link href="/profile">Profile</Link>
                   </li>
                   <li>
                     <a onClick={onLogout}>Logout</a>
@@ -173,6 +173,9 @@ export const Header = () => {
           </li>
           <li>
             <Link href="/keranjang">Keranjang</Link>
+          </li>
+          <li>
+            <Link href="/event-creator">Event Saya</Link>
           </li>
           <li>
             <Link href="/profile">Profile</Link>

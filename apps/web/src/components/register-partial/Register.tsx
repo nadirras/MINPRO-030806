@@ -22,6 +22,10 @@ export default function Register() {
     }
   };
 
+  const checkEmail = () => {
+    alert('Check your email!');
+  };
+
   return (
     <div>
       <Formik
@@ -29,6 +33,7 @@ export default function Register() {
           username: '',
           email: '',
           password: '',
+          usedReferralCode: '',
         }}
         validationSchema={RegisterSchema}
         onSubmit={(values, action) => {
@@ -86,7 +91,15 @@ export default function Register() {
                       className="text-sm text-red-500"
                     />
                   </label>
-
+                  <label className="input input-bordered flex items-center gap-2">
+                    Referral Code
+                    <Field
+                      name="usedReferralCode"
+                      type="text"
+                      className="grow"
+                      placeholder="(optional)"
+                    />
+                  </label>
                   <p>
                     Already have account?{' '}
                     <span>
@@ -94,7 +107,11 @@ export default function Register() {
                     </span>
                   </p>
                   <div className="card-actions justify-end">
-                    <button type="submit" className="btn btn-primary">
+                    <button
+                      type="submit"
+                      onClick={checkEmail}
+                      className="btn btn-primary"
+                    >
                       Register
                     </button>
                   </div>

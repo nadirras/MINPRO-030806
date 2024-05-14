@@ -1,10 +1,11 @@
 'use client';
 import React from 'react';
 import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export default function VerifyPage() {
   const params = useParams();
-
+  const router = useRouter();
   const handleVerify = async () => {
     try {
       const res = await fetch('http://localhost:8000/api/users/verify', {
@@ -17,6 +18,7 @@ export default function VerifyPage() {
       const data = await res.json();
       console.log(data);
       alert('Verify Success!');
+      router.push('/login');
     } catch (error) {
       console.log(error);
     }
@@ -30,4 +32,3 @@ export default function VerifyPage() {
     </div>
   );
 }
-
