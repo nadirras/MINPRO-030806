@@ -8,9 +8,11 @@ import { usePathname } from 'next/navigation';
 import { deleteToken } from '@/app/action';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
+import { IUser } from './profile-partial/MainProfile';
 
 export const Header = () => {
   const [isEventCreator, setIsEventCreator] = useState(false);
+  const [isUser, setIsUser] = useState<IUser | null>(null);
 
   const router = useRouter();
   const users = useAppSelector((state) => state.user.value);
@@ -24,6 +26,7 @@ export const Header = () => {
     dispatch(setUser(null));
     deleteToken('token');
     Cookies.remove('token');
+    router.push('/login');
   };
 
   const keepLogin = async (token: any) => {
@@ -39,6 +42,39 @@ export const Header = () => {
     keepLogin(token);
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = Cookies.get('token');
+        if (!token) {
+          console.log('Login first');
+          return;
+        }
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        const userId = decodedToken.id;
+
+        const res = await fetch(`http://localhost:8000/api/users/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+
+        const userData = await res.json();
+        setIsUser(userData.userData);
+        console.log(userData.userData.UserDetail);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchData();
+  }, [token]);
   // const handleEventCreatorClick = () => {
   //   setIsEventCreator(!isEventCreator);
   //   if (isEventCreator == false) {
@@ -103,43 +139,45 @@ export const Header = () => {
                   <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
               </label>
-              <div className="max-md:hidden dropdown dropdown-end">
-                <div
-                  tabIndex={0}
-                  role="button"
-                  className="btn btn-ghost btn-circle avatar"
-                >
-                  <div className="w-10 rounded-full">
-                    <img
-                      alt="Tailwind CSS Navbar component"
-                      src="https://daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
-                    />
+              {isUser && (
+                <div className="max-md:hidden dropdown dropdown-end">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="btn btn-ghost btn-circle avatar"
+                  >
+                    <div className="w-10 rounded-full">
+                      <img
+                        alt="Tailwind CSS Navbar component"
+                        src={isUser.UserDetail?.photo_profile}
+                      />
+                    </div>
                   </div>
+                  <ul
+                    tabIndex={0}
+                    className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
+                  >
+                    <li>
+                      <Link href="/">Beranda</Link>
+                    </li>
+                    <li>
+                      <Link href="/jelajah">Jelajah</Link>
+                    </li>
+                    <li>
+                      <Link href="/keranjang">Keranjang</Link>
+                    </li>
+                    <li>
+                      <Link href="/event-creator">Event Saya</Link>
+                    </li>
+                    <li>
+                      <Link href="/profile">Profile</Link>
+                    </li>
+                    <li>
+                      <a onClick={onLogout}>Logout</a>
+                    </li>
+                  </ul>
                 </div>
-                <ul
-                  tabIndex={0}
-                  className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
-                >
-                  <li>
-                    <Link href="/">Beranda</Link>
-                  </li>
-                  <li>
-                    <Link href="/jelajah">Jelajah</Link>
-                  </li>
-                  <li>
-                    <Link href="/keranjang">Keranjang</Link>
-                  </li>
-                  <li>
-                    <Link href="/event-creator">Event Saya</Link>
-                  </li>
-                  <li>
-                    <Link href="/profile">Profile</Link>
-                  </li>
-                  <li>
-                    <a onClick={onLogout}>Logout</a>
-                  </li>
-                </ul>
-              </div>
+              )}
             </div>
           )}
 

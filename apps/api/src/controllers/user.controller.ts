@@ -8,6 +8,7 @@ import handlebars from 'handlebars';
 import { transporter } from '../helpers/nodemailer';
 import dotenv from 'dotenv';
 import multer from 'multer';
+import jwt from 'jsonwebtoken';
 dotenv.config();
 // const databaseUrl = process.env.DATABASE_URL;
 const jwtKey = process.env.KEY_JWT;
@@ -262,6 +263,69 @@ export class UserController {
   }
 
   //update profile
+  // async updateProfile(req: Request, res: Response) {
+  //   try {
+  //     const userId = req.user?.id;
+  //     let newPath = null;
+  //     const tanggalLahir = new Date(req.body.tanggal_lahir);
+
+  //     if (req.file) {
+  //       const { originalname, path } = req.file;
+  //       const parts = originalname.split('.');
+  //       const ext = parts[parts.length - 1];
+  //       newPath = path + '.' + ext;
+  //       fs.renameSync(path, newPath);
+  //     }
+  //     // const {
+  //     //   nama_depan,
+  //     //   nama_belakang,
+  //     //   jenis_kelamin,
+  //     //   tanggal_lahir,
+  //     //   nomor_telepon,
+  //     // } = req.body;
+
+  //     if (!userId) {
+  //       throw new Error('User ID not found in request.');
+  //     }
+
+  //     // // Get username and email from the associated User entity
+  //     const user = await prisma.userDetail.findUnique({
+  //       where: { userId: userId },
+  //     });
+
+  //     if (!user) {
+  //       throw new Error('User not found.');
+  //     }
+
+  //     const updateUserDetail = await prisma.userDetail.update({
+  //       where: { userId },
+  //       data: {
+  //         nama_depan: req.body.nama_depan,
+  //         nama_belakang: req.body.nama_belakang,
+  //         jenis_kelamin: req.body.jenis_kelamin,
+  //         tanggal_lahir: tanggalLahir,
+  //         nomor_telepon: req.body.nomor_telepon,
+  //         photo_profile: newPath ? newPath : user?.photo_profile,
+  //       },
+  //     });
+  //     // const { username, email } = user;
+
+  //     res.status(200).json({
+  //       status: 'OK',
+  //       message: 'Profile updated successfully',
+  //       userDetail: updateUserDetail,
+  //       // username,
+  //       // email,
+  //     });
+  //   } catch (err) {
+  //     console.error('Failed to update profile:', err);
+  //     res.status(400).json({
+  //       status: 'error',
+  //       message: err,
+  //     });
+  //   }
+  // }
+
   async updateProfile(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
@@ -270,8 +334,6 @@ export class UserController {
         throw new Error('User ID not found in request.');
       }
 
-      console.log(req.file);
-
       const {
         nama_depan,
         nama_belakang,
@@ -279,57 +341,112 @@ export class UserController {
         tanggal_lahir,
         nomor_telepon,
       } = req.body;
-      const imageUrl = req.file
-        ? `http://localhost:8000/public/images/${req.file.filename}`
-        : null;
+
+      console.log(req.file);
 
       // Validasi format tanggal_lahir (YYYY-MM-DD)
-      if (!tanggal_lahir || !/^(\d{4})-(\d{2})-(\d{2})$/.test(tanggal_lahir)) {
+      if (tanggal_lahir && !/^(\d{4})-(\d{2})-(\d{2})$/.test(tanggal_lahir)) {
         throw new Error('Tanggal lahir harus diisi dalam format YYYY-MM-DD.');
       }
 
-      console.log(req.body);
-      // Update user profile in database
-      const updateUserDetail = await prisma.userDetail.upsert({
+      // Retrieve existing user detail or create a new one if not found
+      let existingUserDetail = await prisma.userDetail.findUnique({
         where: { userId },
-        update: {
-          nama_depan,
-          nama_belakang,
-          jenis_kelamin,
-          tanggal_lahir: new Date(tanggal_lahir),
-          nomor_telepon,
-          photo_profile: imageUrl,
-        },
-        create: {
-          userId,
-          nama_depan,
-          nama_belakang,
-          jenis_kelamin,
-          tanggal_lahir: new Date(tanggal_lahir),
-          nomor_telepon,
-          photo_profile: imageUrl,
-        },
       });
 
-      // Dapatkan informasi username dan email dari entitas User terkait
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { username: true, email: true },
-      });
+      if (!existingUserDetail) {
+        // Create a new user detail if not found
+        existingUserDetail = await prisma.userDetail.create({
+          data: {
+            userId,
+            nama_depan,
+            nama_belakang,
+            jenis_kelamin,
+            tanggal_lahir: new Date(tanggal_lahir),
+            nomor_telepon,
+            photo_profile: `http://localhost:8000/public/images/${req.file?.filename}`, // Set initial photo_profile to null or update accordingly
+          },
+        });
+      } else {
+        // Prepare updated data based on existing values and incoming changes
+        const updatedDetails: any = {};
 
-      if (!user) {
-        throw new Error('User not found.');
+        if (
+          nama_depan !== undefined &&
+          nama_depan !== existingUserDetail.nama_depan
+        ) {
+          updatedDetails.nama_depan = nama_depan;
+        }
+
+        if (
+          nama_belakang !== undefined &&
+          nama_belakang !== existingUserDetail.nama_belakang
+        ) {
+          updatedDetails.nama_belakang = nama_belakang;
+        }
+
+        if (
+          jenis_kelamin !== undefined &&
+          jenis_kelamin !== existingUserDetail.jenis_kelamin
+        ) {
+          updatedDetails.jenis_kelamin = jenis_kelamin;
+        }
+
+        if (
+          tanggal_lahir !== undefined &&
+          tanggal_lahir !== existingUserDetail.tanggal_lahir?.toISOString()
+        ) {
+          updatedDetails.tanggal_lahir = new Date(tanggal_lahir);
+        }
+
+        if (
+          nomor_telepon !== undefined &&
+          nomor_telepon !== existingUserDetail.nomor_telepon
+        ) {
+          updatedDetails.nomor_telepon = nomor_telepon;
+        }
+
+        // Update photo_profile only if a new file is uploaded
+        const imageUrl = req.file
+          ? `http://localhost:8000/public/images/${req.file.filename}`
+          : null;
+
+        if (imageUrl && imageUrl !== existingUserDetail.photo_profile) {
+          updatedDetails.photo_profile = imageUrl;
+        }
+
+        if (Object.keys(updatedDetails).length > 0) {
+          const updateUserDetail = await prisma.userDetail.update({
+            where: { userId },
+            data: updatedDetails,
+          });
+
+          // Get username and email from the associated User entity
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { username: true, email: true },
+          });
+
+          if (!user) {
+            throw new Error('User not found.');
+          }
+
+          res.status(200).send({
+            status: 'OK',
+            message: 'Profile updated successfully',
+            userDetail: updateUserDetail,
+            username: user.username,
+            email: user.email,
+          });
+        } else {
+          // No changes were made
+          res.status(200).send({
+            status: 'OK',
+            message: 'No changes applied',
+            userDetail: existingUserDetail,
+          });
+        }
       }
-
-      const { username, email } = user;
-
-      res.status(200).send({
-        status: 'OK',
-        message: 'Profile updated successfully',
-        userDetail: updateUserDetail,
-        username,
-        email,
-      });
     } catch (err) {
       console.error('Failed to update profile:', err);
       res.status(400).send({
@@ -351,6 +468,15 @@ export class UserController {
         return res.status(404).send({ message: 'Email not found.' });
       }
 
+      const payload = {
+        id: user.id,
+        reset: true,
+      };
+
+      const reset_token = sign(payload, process.env.KEY_JWT!);
+      //Prepare email template
+      const link = `http://localhost:3000/reset-password/${reset_token}`;
+
       //Send email reset password
       const templatePath = path.join(
         __dirname,
@@ -361,6 +487,7 @@ export class UserController {
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
         name: user.username,
+        link,
       });
 
       //Send registration email
@@ -376,6 +503,7 @@ export class UserController {
         status: 'OK',
         message: 'Reset password link sent to your email.',
         email,
+        reset_token,
       });
     } catch (err) {
       res.status(400).json({
@@ -445,15 +573,15 @@ export class UserController {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ message: 'User ID not found in request.' });
+      return res.status(401).send({ message: 'User ID not found in request.' });
     }
 
-    const { newEmail, username } = req.body;
+    const { newEmail } = req.body;
 
     if (!newEmail) {
       return res
         .status(400)
-        .json({ message: 'New email address is required.' });
+        .send({ message: 'New email address is required.' });
     }
 
     try {
@@ -466,7 +594,7 @@ export class UserController {
         return res.status(404).json({ message: 'User not found.' });
       }
 
-      // Check existing email
+      // Check if the new email is already in use
       const existingUser = await prisma.user.findUnique({
         where: {
           email: newEmail,
@@ -477,14 +605,13 @@ export class UserController {
         return res.status(400).json({ message: 'Email is already in use.' });
       }
 
-      // Update the user's email
-      const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: {
-          username,
-          email: newEmail,
-        },
-      });
+      // Generate JWT token for email verification
+      const payload = {
+        id: user.id,
+        newEmail: newEmail,
+      };
+      const token = sign(payload, jwtKey!, { expiresIn: '1d' });
+      const link = `http://localhost:3000/verifikasi-email/${userId}`;
 
       //Send email confirmation change email
       const templatePath = path.join(
@@ -496,28 +623,76 @@ export class UserController {
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
         name: user.username,
+        link,
       });
 
-      //Send registration email
+      //Send verify email
       await transporter.sendMail({
         from: 'diahnof@gmail.com',
-        to: user.email,
+        to: newEmail,
         subject: 'Change Email Confirmation',
         html,
       });
 
       // Send success response
-      res.status(200).json({
+      res.status(200).send({
         status: 'OK',
-        message: 'Email updated successfully.',
-        user: updatedUser,
+        message:
+          'Verification email sent. Please check your new email to verify the address',
+        newEmail,
+        token,
       });
     } catch (error) {
       console.error('Failed to change email:', error);
-      res.status(500).json({ message: 'Failed to change email.' });
+      res.status(500).send({ message: 'Failed to change email.' });
     }
   }
 
+  //verify new wmail
+  async verifyChangeEmail(req: Request, res: Response) {
+    try {
+      // get token from req.params
+      let token: string | undefined = req.params.token;
+
+      if (!token) {
+        token =
+          (req.query.token as string) ||
+          req.headers.authorization?.replace('Bearer ', '');
+        if (!token) {
+          throw new Error('Token is required.');
+        }
+      }
+
+      // Verify token
+      const jwtKey = process.env.KEY_JWT!;
+      const verifyUser = jwt.verify(token, jwtKey) as {
+        id: number;
+        newEmail: string;
+      };
+
+      // Debug logging
+      console.log('Decoded token:', verifyUser);
+
+      if (!verifyUser.id || !verifyUser.newEmail) {
+        throw new Error('Invalid token payload');
+      }
+
+      //Update email in database
+      const updateUser = await prisma.user.update({
+        where: { id: verifyUser.id },
+        data: { email: verifyUser.newEmail },
+      });
+
+      res.status(200).send({
+        status: 'OK',
+        message: 'Email updated successfully.',
+        user: updateUser,
+      });
+    } catch (error) {
+      console.error('Failed to verify email change:', error);
+      res.status(500).send({ message: 'Failed to verify email change.' });
+    }
+  }
   //Get data by Id
   async GetDataById(req: Request, res: Response) {
     try {

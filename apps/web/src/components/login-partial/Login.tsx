@@ -77,7 +77,9 @@ export default function Login() {
                 className="text-sm text-red-500"
               />
             </label>
-            <p>Forgot password?</p>
+            <Link href="/forgot-password" className="text-primary">
+              Forgot password?
+            </Link>
             <p>
               Didn't have account?{' '}
               <span className="text-primary">
