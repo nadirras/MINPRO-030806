@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { genSalt, hash, compare } from 'bcrypt';
 import { sign, verify } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
 import handlebars from 'handlebars';
@@ -263,69 +264,6 @@ export class UserController {
   }
 
   //update profile
-  // async updateProfile(req: Request, res: Response) {
-  //   try {
-  //     const userId = req.user?.id;
-  //     let newPath = null;
-  //     const tanggalLahir = new Date(req.body.tanggal_lahir);
-
-  //     if (req.file) {
-  //       const { originalname, path } = req.file;
-  //       const parts = originalname.split('.');
-  //       const ext = parts[parts.length - 1];
-  //       newPath = path + '.' + ext;
-  //       fs.renameSync(path, newPath);
-  //     }
-  //     // const {
-  //     //   nama_depan,
-  //     //   nama_belakang,
-  //     //   jenis_kelamin,
-  //     //   tanggal_lahir,
-  //     //   nomor_telepon,
-  //     // } = req.body;
-
-  //     if (!userId) {
-  //       throw new Error('User ID not found in request.');
-  //     }
-
-  //     // // Get username and email from the associated User entity
-  //     const user = await prisma.userDetail.findUnique({
-  //       where: { userId: userId },
-  //     });
-
-  //     if (!user) {
-  //       throw new Error('User not found.');
-  //     }
-
-  //     const updateUserDetail = await prisma.userDetail.update({
-  //       where: { userId },
-  //       data: {
-  //         nama_depan: req.body.nama_depan,
-  //         nama_belakang: req.body.nama_belakang,
-  //         jenis_kelamin: req.body.jenis_kelamin,
-  //         tanggal_lahir: tanggalLahir,
-  //         nomor_telepon: req.body.nomor_telepon,
-  //         photo_profile: newPath ? newPath : user?.photo_profile,
-  //       },
-  //     });
-  //     // const { username, email } = user;
-
-  //     res.status(200).json({
-  //       status: 'OK',
-  //       message: 'Profile updated successfully',
-  //       userDetail: updateUserDetail,
-  //       // username,
-  //       // email,
-  //     });
-  //   } catch (err) {
-  //     console.error('Failed to update profile:', err);
-  //     res.status(400).json({
-  //       status: 'error',
-  //       message: err,
-  //     });
-  //   }
-  // }
-
   async updateProfile(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
@@ -342,6 +280,7 @@ export class UserController {
         nomor_telepon,
       } = req.body;
 
+
       console.log(req.file);
 
       // Validasi format tanggal_lahir (YYYY-MM-DD)
@@ -353,6 +292,7 @@ export class UserController {
       let existingUserDetail = await prisma.userDetail.findUnique({
         where: { userId },
       });
+
 
       if (!existingUserDetail) {
         // Create a new user detail if not found
@@ -468,6 +408,7 @@ export class UserController {
         return res.status(404).send({ message: 'Email not found.' });
       }
 
+
       const payload = {
         id: user.id,
         reset: true,
@@ -476,6 +417,7 @@ export class UserController {
       const reset_token = sign(payload, process.env.KEY_JWT!);
       //Prepare email template
       const link = `http://localhost:3000/reset-password/${reset_token}`;
+
 
       //Send email reset password
       const templatePath = path.join(
@@ -564,7 +506,7 @@ export class UserController {
       });
     } catch (error) {
       console.error('Failed to reset password:', error);
-      res.status(500).send({ message: 'Failed to reset password.' });
+      res.status(400).send({ message: 'Failed to reset password.' });
     }
   }
 
@@ -594,6 +536,7 @@ export class UserController {
         return res.status(404).json({ message: 'User not found.' });
       }
 
+
       // Check if the new email is already in use
       const existingUser = await prisma.user.findUnique({
         where: {
@@ -611,7 +554,6 @@ export class UserController {
         newEmail: newEmail,
       };
       const token = sign(payload, jwtKey!, { expiresIn: '1d' });
-      const link = `http://localhost:3000/verifikasi-email/${userId}`;
 
       //Send email confirmation change email
       const templatePath = path.join(
@@ -623,7 +565,6 @@ export class UserController {
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
         name: user.username,
-        link,
       });
 
       //Send verify email
@@ -633,6 +574,7 @@ export class UserController {
         subject: 'Change Email Confirmation',
         html,
       });
+
 
       // Send success response
       res.status(200).send({
@@ -645,6 +587,53 @@ export class UserController {
     } catch (error) {
       console.error('Failed to change email:', error);
       res.status(500).send({ message: 'Failed to change email.' });
+
+    }
+  }
+
+  //verify new wmail
+  async verifyChangeEmail(req: Request, res: Response) {
+    try {
+      // get token from req.params
+      let token: string | undefined = req.params.token;
+
+      if (!token) {
+        token =
+          (req.query.token as string) ||
+          req.headers.authorization?.replace('Bearer ', '');
+        if (!token) {
+          throw new Error('Token is required.');
+        }
+      }
+
+      // Verify token
+      const jwtKey = process.env.KEY_JWT!;
+      const verifyUser = jwt.verify(token, jwtKey) as {
+        id: number;
+        newEmail: string;
+      };
+
+      // Debug logging
+      console.log('Decoded token:', verifyUser);
+
+      if (!verifyUser.id || !verifyUser.newEmail) {
+        throw new Error('Invalid token payload');
+      }
+
+      //Update email in database
+      const updateUser = await prisma.user.update({
+        where: { id: verifyUser.id },
+        data: { email: verifyUser.newEmail },
+      });
+
+      res.status(200).send({
+        status: 'OK',
+        message: 'Email updated successfully.',
+        user: updateUser,
+      });
+    } catch (error) {
+      console.error('Failed to verify email change:', error);
+      res.status(500).send({ message: 'Failed to verify email change.' });
     }
   }
 
@@ -694,47 +683,7 @@ export class UserController {
     }
   }
   //Get data by Id
-  // async GetDataById(req: Request, res: Response) {
-  //   try {
-  //     const id = parseInt(req.params.id, 10);
 
-  //     if (isNaN(id)) {
-  //       return res
-  //         .status(400)
-  //         .json({ status: 'error', message: 'Invalid user ID' });
-  //     }
-
-  //     // Use Prisma to fetch all related data from different tables
-  //     const userData = await prisma.user.findUnique({
-  //       where: { id },
-  //       include: {
-  //         UserDetail: true,
-  //         referral: true,
-  //         discountVoucher: true,
-  //         Points: true,
-  //       },
-  //     });
-
-  //     // Check if userData is found
-  //     if (!userData) {
-  //       return res.status(404).json({
-  //         status: 'error',
-  //         message: 'User not found',
-  //       });
-  //     }
-
-  //     res.status(200).json({
-  //       status: 'success',
-  //       userData,
-  //     });
-  //   } catch (error) {
-  //     console.error('Error fetching user data by ID:', error);
-  //     res.status(500).json({
-  //       status: 'error',
-  //       message: 'Failed to fetch user data',
-  //     });
-  //   }
-  // }
   async GetDataById(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
@@ -752,6 +701,7 @@ export class UserController {
           username: true,
           email: true,
           usedReferralCode: true,
+          Role: true,
           UserDetail: {
             select: {
               nama_depan: true,
@@ -771,7 +721,9 @@ export class UserController {
           discountVoucher: {
             where: {
               expired_date: {
-                gte: new Date(),
+
+                gte: new Date(), // Filter vouchers that are not expired
+
               },
             },
           },
@@ -785,7 +737,9 @@ export class UserController {
         });
       }
 
+      // Initialize totalActivePoints to 0
       let totalActivePoints = 0;
+
 
       for (const point of userData.Points) {
         if (point.expired_date < new Date()) {
@@ -798,6 +752,9 @@ export class UserController {
         }
       }
 
+
+      // Check and update status of discount vouchers based on expired_date
+
       for (const voucher of userData.discountVoucher) {
         if (voucher.expired_date < new Date()) {
           await prisma.discountVoucher.update({
@@ -807,11 +764,17 @@ export class UserController {
         }
       }
 
+
+      // Structure the response
+
       const response = {
         id: userData.id,
         username: userData.username,
         email: userData.email,
         usedReferralCode: userData.usedReferralCode,
+
+        role: userData.Role,
+
         userDetail: userData.UserDetail,
         referral: userData.referral,
         totalActivePoints,
@@ -832,6 +795,191 @@ export class UserController {
         status: 'error',
         message: 'Failed to fetch user data',
       });
+
+    }
+  }
+
+  //Get all data
+  async GetAllUser(req: Request, res: Response) {
+    try {
+      const usersData = await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          usedReferralCode: true,
+          Role: true,
+          UserDetail: {
+            select: {
+              nama_depan: true,
+              nama_belakang: true,
+              jenis_kelamin: true,
+              tanggal_lahir: true,
+              nomor_telepon: true,
+              photo_profile: true,
+            },
+          },
+          referral: {
+            select: {
+              myReferralCode: true,
+            },
+          },
+          Points: true,
+          discountVoucher: {
+            where: {
+              expired_date: {
+                gte: new Date(), // Filter vouchers that are not expired
+              },
+            },
+          },
+        },
+      });
+
+      // Process each user's data
+      const formattedUsersData = await Promise.all(
+        usersData.map(async (user) => {
+          // Calculate total active points for the user
+          let totalActivePoints = 0;
+          for (const point of user.Points) {
+            if (point.expired_date < new Date()) {
+              // Update expired points to 'Expired' status
+              await prisma.points.update({
+                where: { id: point.id },
+                data: { point_status: 'Expired' },
+              });
+            } else if (point.point_status === 'Active') {
+              // Accumulate total active points
+              totalActivePoints += point.points;
+            }
+          }
+
+          // Update expired discount vouchers to 'Expired' status
+          for (const voucher of user.discountVoucher) {
+            if (voucher.expired_date < new Date()) {
+              await prisma.discountVoucher.update({
+                where: { id: voucher.id },
+                data: { discount_status: 'Expired' },
+              });
+            }
+          }
+
+          // Return formatted user data
+          return {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            usedReferralCode: user.usedReferralCode,
+            role: user.Role,
+            userDetail: user.UserDetail,
+            referral: user.referral,
+            totalActivePoints,
+            discountVouchers: user.discountVoucher.map((voucher) => ({
+              discountCoupon: voucher.discountCoupon,
+              discountPercentage: voucher.discountPercentage,
+              expired_date: voucher.expired_date,
+            })),
+          };
+        }),
+      );
+
+      res.status(200).send({
+        status: 'success',
+        usersData: formattedUsersData,
+      });
+    } catch (error) {
+      console.error('Error fetching users data:', error);
+      res.status(500).send({
+        status: 'error',
+        message: 'Failed to fetch users data',
+      });
+    }
+  }
+
+  //Request Change Role
+  async requestRoleChange(req: Request, res: Response) {
+    const { email, targetRole } = req.body;
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        return res.status(404).send({ message: 'id not found.' });
+      }
+
+      const payload = {
+        id: user.id,
+        targetRole
+      };
+
+      const role_token = sign(payload, process.env.KEY_JWT!);
+      const link = `http://localhost:8000/api/users/verify-role/${role_token}`;
+      // const link = `http://localhost:3000/reset-password/${reset_token}`;
+
+      //Send email reset password
+      const templatePath = path.join(
+        __dirname,
+        '../templates',
+        'verifyChangeRole.html',
+      );
+      const templateSource = fs.readFileSync(templatePath, 'utf-8');
+      const compiledTemplate = handlebars.compile(templateSource);
+      const html = compiledTemplate({
+        name: user.username,
+        link,
+      });
+
+      //Send registration email
+      await transporter.sendMail({
+        from: 'diahnof@gmail.com',
+        to: user.email,
+        subject: 'Verify Role Account in Zenith Tiket',
+        html,
+      });
+
+      res.status(200).send({
+        status: 'OK',
+        message: 'Verification email sent, please check your email',
+        email,
+        targetRole,
+        role_token,
+      });
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+      res.status(400).send({ error: 'Failed to send verification email' });
+    }
+  }
+
+  async verifyChangeRole(req: Request, res: Response) {
+    const { token } = req.params;
+
+    try {
+      // Verify token
+      const decodedToken = verify(token, process.env.KEY_JWT!) as {
+        id: number;
+        targetRole: string; // Include targetRole in the type
+      };
+
+      const userId = decodedToken.id;
+      const targetRole = decodedToken.targetRole;
+
+      // Update user role in database
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          Role: targetRole as Role, // Cast targetRole to Role type
+        },
+      });
+
+      res.status(200).send({
+        status: 'OK',
+        message: 'Your role has been changed!',
+        updatedUser,
+      });
+    } catch (error) {
+      console.error('Failed to change role:', error);
+      res.status(400).send({ message: 'Failed to change role' });
+
     }
   }
 }

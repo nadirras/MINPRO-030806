@@ -47,6 +47,12 @@ enum StatusOrder {
   Cancel
 }
 
+enum EventStatus {
+  ComingSoon
+  available
+  Finished
+}
+
 enum EventCategory {
   Festival
   Attraction
@@ -54,7 +60,25 @@ enum EventCategory {
   Seminar
 }
 
+enum ZonaWaktu {
+  WIB
+  WITA
+  WIT
+}
+
+enum StatusTransaction {
+  Pending
+  Processing
+  Completed
+  Failed
+  Cancelled
+  Refunded
+  Expired
+  On_Hold
+}
+
 model User {
+  //menyimpan informasi dasar tentang pengguna, termasuk hubungan dengan detail pengguna, event, dan pesanan
   id               Int               @id @default(autoincrement())
   username         String            @unique
   email            String            @unique
@@ -62,14 +86,19 @@ model User {
   usedReferralCode String? // Kode referral yang digunakan saat registrasi
   createdAt        DateTime          @default(now())
   activation       Boolean?          @default(false)
+  Role             Role              @default(Pembeli)
   referral         Referral?
   UserDetail       UserDetail?
   discountVoucher  DiscountVoucher[]
   Points           Points[]
   Cart             Cart?
+  Order            Order[]
+  Transaction      Transaction[]
+  EventOrganizer   EventOrganizer[]
 }
 
 model UserDetail {
+  //menyimpan detail tambahan tentang pengguna, termasuk nama, tanggal lahir, nomor telepon, dan foto profil
   id            Int      @id @default(autoincrement())
   user          User     @relation(fields: [userId], references: [id])
   userId        Int      @unique
@@ -82,6 +111,7 @@ model UserDetail {
 }
 
 model Referral {
+  //menyimpan data kode referral yang dimiliki user 
   id             Int      @id @default(autoincrement())
   user           User     @relation(fields: [userId], references: [id])
   userId         Int      @unique
@@ -90,18 +120,19 @@ model Referral {
 }
 
 model DiscountVoucher {
+  //menyimpan data voucher diskon yang dimiliki user
   id                 Int            @id @default(autoincrement())
-  user               User           @relation(fields: [userId], references: [id])
+  user               User?           @relation(fields: [userId], references: [id])
   userId             Int
   discountCoupon     String
   discountPercentage Int
   createdAt          DateTime       @default(now())
   expired_date       DateTime
   discount_status    DiscountStatus
-  EventItem          EventItem[]
 }
 
 model Points {
+  //menyimpan data poin yang dimiliki user
   id           Int         @id @default(autoincrement())
   user         User        @relation(fields: [userId], references: [id])
   userId       Int
@@ -112,7 +143,9 @@ model Points {
 }
 
 model EventOrganizer {
+  //menyimpan informasi tentang penyelenggara acara, termasuk nama penyelenggara, gambar penyelenggara, kontak person, dan nomor kontak.
   id                  Int     @id @default(autoincrement())
+  user                User    @relation(fields: [userId], references: [id])
   userId              Int
   eventOrganizer      String  @unique //biar gak ada event organizer dobel
   eventImgOrganizer   String  @db.LongText
@@ -122,6 +155,7 @@ model EventOrganizer {
 }
 
 model Event {
+  //menyimpan informasi tentang acara, termasuk kategori, nama, deskripsi, tanggal, waktu, lokasi, harga tiket, dan ketersediaan tempat duduk.
   id               Int            @id @default(autoincrement())
   eventOrganizer   EventOrganizer @relation(fields: [eventOrganizerId], references: [id])
   eventOrganizerId Int
@@ -131,12 +165,14 @@ model Event {
   eventImage       String         @db.LongText
   description      String?        @db.LongText
   availableSeats   Int
-  startDate        DateTime?
-  endDate          DateTime?
+  startDate        DateTime
+  endDate          DateTime
   startTime        String
   endTime          String
-  location         String?
-  EventItem        EventItem[]
+  zona_waktu       ZonaWaktu
+  location         String
+  province         String
+  eventStatus       EventStatus
   CartItem         CartItem[]
   OrderItem        OrderItem[]
   Review           Review[]
@@ -144,6 +180,7 @@ model Event {
 }
 
 model EventPrice {
+  //menyimpan informasi tentang harga tiket acara, termasuk apakah tiket berbayar atau tidak, dan harga tiket.
   id          Int     @id @default(autoincrement())
   event       Event   @relation(fields: [eventId], references: [id])
   eventId     Int     @unique
@@ -151,57 +188,73 @@ model EventPrice {
   ticketPrice Int
 }
 
-model EventItem {
-  id                Int             @id @default(autoincrement())
-  event             Event           @relation(fields: [eventId], references: [id])
-  eventId           Int
-  discountVoucher   DiscountVoucher @relation(fields: [discountVoucherId], references: [id])
-  discountVoucherId Int
-}
-
 model Cart {
-  id       Int        @id @default(autoincrement())
-  userId   Int        @unique
-  user     User       @relation(fields: [userId], references: [id])
-  discount Int? //ini terserah mau make kupon atau enggak
-  CartItem CartItem[]
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+  CartItem  CartItem[]
 }
 
 model CartItem {
-  id       Int   @id @default(autoincrement())
-  cartId   Int
-  eventId  Int
-  quantity Int
-  cart     Cart  @relation(fields: [cartId], references: [id])
-  event    Event @relation(fields: [eventId], references: [id])
+  id        Int      @id @default(autoincrement())
+  cartId    Int
+  eventId   Int
+  quantity  Int
+  createdAt DateTime @default(now())
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  event     Event    @relation(fields: [eventId], references: [id])
 }
 
 model Order {
+  //menyimpan informasi tentang pesanan, termasuk pengguna yang memesan, acara yang dipesan, jumlah tiket yang dipesan, total harga, dan status pesanan.
   id          Int         @id @default(autoincrement())
+  user        User        @relation(fields: [userId], references: [id])
   userId      Int
   total       Int
   status      StatusOrder
   orderDate   DateTime    @default(now())
-  expiredDate DateTime    @default(now())
+  expiredDate DateTime
   OrderItem   OrderItem[]
   Payment     Payment?
 }
 
 model OrderItem {
-  id       Int   @id @default(autoincrement())
-  orderId  Int
-  eventId  Int
-  quantity Int
-  order    Order @relation(fields: [orderId], references: [id])
-  event    Event @relation(fields: [eventId], references: [id])
+  id        Int      @id @default(autoincrement())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   Int
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   Int
+  quantity  Int
+  createdAt DateTime @default(now())
 }
 
+// model EventItem {
+//   id                Int             @id @default(autoincrement())
+//   event             Event           @relation(fields: [eventId], references: [id])
+//   eventId           Int
+//   discountVoucher   DiscountVoucher @relation(fields: [discountVoucherId], references: [id])
+//   discountVoucherId Int
+// }
+
 model Payment {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  imageUrl  String
-  orderId   Int      @unique
-  order     Order    @relation(fields: [orderId], references: [id])
+  id          Int           @id @default(autoincrement())
+  orderId     Int           @unique
+  order       Order         @relation(fields: [orderId], references: [id])
+  amount      Int
+  method      String
+  createdAt   DateTime      @default(now())
+  Transaction Transaction[]
+}
+
+model Transaction {
+  id        Int               @id @default(autoincrement())
+  userId    Int
+  user      User              @relation(fields: [userId], references: [id])
+  paymentId Int
+  payment   Payment           @relation(fields: [paymentId], references: [id])
+  status    StatusTransaction
+  createdAt DateTime          @default(now())
 }
 
 model Review {
