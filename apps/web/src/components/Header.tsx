@@ -8,9 +8,11 @@ import { usePathname } from 'next/navigation';
 import { deleteToken } from '@/app/action';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
+import { IUser } from './profile-partial/MainProfile';
 
 export const Header = () => {
   const [isEventCreator, setIsEventCreator] = useState(false);
+  const [isUser, setIsUser] = useState<IUser | null>(null);
 
   const router = useRouter();
   const users = useAppSelector((state) => state.user.value);
@@ -24,6 +26,7 @@ export const Header = () => {
     dispatch(setUser(null));
     deleteToken('token');
     Cookies.remove('token');
+    router.push('/login');
   };
 
   const keepLogin = async (token: any) => {
@@ -39,17 +42,44 @@ export const Header = () => {
     keepLogin(token);
   }, []);
 
-  // const handleEventCreatorClick = () => {
-  //   setIsEventCreator(!isEventCreator);
-  //   if (isEventCreator == false) {
-  //     router.push('/event-creator');
-  //   } else {
-  //     router.push('/');
-  //   }
-  // };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = Cookies.get('token');
+        if (!token) {
+          console.log('Login first');
+          return;
+        }
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        const userId = decodedToken.id;
+
+        const res = await fetch(`http://localhost:8000/api/users/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to fetch user data');
+        }
+
+        const responseData = await res.json();
+        setIsUser(responseData.data);
+        console.log('response navbar:', responseData);
+        console.log('response user navbar:', responseData.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchData();
+  }, [token]);
+
   return (
     <div className="drawer z-20 max-md:p-2 max-sm:p-3">
-      {/* <time dateTime="2030-10-25" suppressHydrationWarning /> */}
+      <time dateTime="2030-10-25" suppressHydrationWarning />
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content">
         {/* Navbar */}
@@ -103,6 +133,7 @@ export const Header = () => {
                   <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
               </label>
+
               <div className="max-md:hidden dropdown dropdown-end">
                 <div
                   tabIndex={0}
@@ -112,7 +143,7 @@ export const Header = () => {
                   <div className="w-10 rounded-full">
                     <img
                       alt="Tailwind CSS Navbar component"
-                      src="https://daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
+                      src={isUser?.userDetail?.photo_profile}
                     />
                   </div>
                 </div>

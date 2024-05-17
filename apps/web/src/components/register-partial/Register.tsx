@@ -50,7 +50,7 @@ export default function Register() {
 
                 <div className="card-body">
                   <label className="input input-bordered flex items-center gap-2">
-                    Name
+                    Username
                     <Field
                       name="username"
                       type="text"

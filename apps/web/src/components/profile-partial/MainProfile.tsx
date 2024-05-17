@@ -1,20 +1,31 @@
 'use client';
 import { useAppSelector } from '@/lib/features/hooks';
-import { getUser } from '@/lib/user';
 import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 
-interface IUser {
+export interface IUser {
+  id: number;
   username: string;
   email: string;
-  jenis_kelamin: string;
-  tanggal_lahir: string;
-  nomor_telepon: string;
+  usedReferralCode: string | null;
+  userDetail: {
+    nama_depan: string;
+    nama_belakang: string;
+    jenis_kelamin: string;
+    tanggal_lahir: string;
+    nomor_telepon: string;
+    photo_profile: string;
+  } | null;
   referral: {
     myReferralCode: string;
-  };
-  photo_profile: string;
+  } | null;
+  totalActivePoints: number;
+  discount: {
+    discountCoupon: string;
+    discountPercentage: number;
+    expired_date: string;
+  }[];
 }
 
 export default function MainProfile() {
@@ -29,8 +40,10 @@ export default function MainProfile() {
           console.log('Login first');
           return;
         }
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        const userId = decodedToken.id;
 
-        const res = await fetch('http://localhost:8000/api/users/keep-login', {
+        const res = await fetch(`http://localhost:8000/api/users/${userId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -42,9 +55,8 @@ export default function MainProfile() {
           throw new Error('Failed to fetch user data');
         }
 
-        const userData = await res.json();
-        setUser(userData);
-        console.log(userData);
+        const responseData = await res.json();
+        setUser(responseData.data);
       } catch (error) {
         console.error(error);
       }
@@ -52,79 +64,140 @@ export default function MainProfile() {
 
     fetchData();
   }, [token]);
+
+  function formatGender(gender: string) {
+    if (gender === 'Laki_laki') {
+      return 'Laki-laki';
+    }
+    return gender;
+  }
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="grid-profile h-screen mx-10 ">
-      {user && (
-        <>
-          <div className="container">
-            <div className="card bg-base-100 shadow-xl p-4">
-              <div className="card-title">{user.username}</div>
-              <div className="card-body">
-                <ul>
-                  <li>Poin</li>
-                  <li>List Voucher</li>
-                  <li>Histori Review</li>
-                </ul>
-              </div>
-            </div>
+    <div className="grid-profile h-screen mx-10">
+      <div className="container">
+        <time dateTime="2030-10-25" suppressHydrationWarning />
+        <div className="card bg-base-100 shadow-xl p-4">
+          <div className="card-title">
+            {user.userDetail?.nama_depan || 'N/A'}{' '}
+            {user.userDetail?.nama_belakang || 'N/A'}
           </div>
 
-          <div className="container">
-            <div className="card bg-base-100 shadow-xl p-4">
-              <div className="card-title">Biodata Diri</div>
-              <div className="card-body">
-                <div className="biodata-grid">
-                  <div className="container max-md:w-[50%]">
-                    <img
-                      src={user.photo_profile}
-                      alt="Profile"
-                      className="w-[20rem] h-auto"
-                    />
-                  </div>
-                  <div className="container max-md:w-[100%]">
-                    <table className="w-full n">
-                      <tbody>
-                        <tr>
-                          <td className="w-[30%]">Nama</td>
-                          <td className="w-[70%]">{user.username}</td>
-                        </tr>
-                        <tr>
-                          <td className="w-[30%]">Email</td>
-                          <td className="w-[70%]">{user.email}</td>
-                        </tr>
-                        <tr>
-                          <td className="w-[30%]">Tanggal Lahir</td>
-                          <td className="w-[70%]">{user.tanggal_lahir}</td>
-                        </tr>
-                        <tr>
-                          <td className="w-[30%]">Jenis Kelamin</td>
-                          <td className="w-[70%]">{user.jenis_kelamin}</td>
-                        </tr>
-                        <tr>
-                          <td className="w-[30%]">Nomor Telepon</td>
-                          <td className="w-[70%]">{user.nomor_telepon}</td>
-                        </tr>
-                        <tr>
-                          <td className="w-[30%]">Kode Referral</td>
-                          <td className="w-[70%]">
-                            {user.referral.myReferralCode}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <Link
-                      href="/profile/edit-profile"
-                      className="btn btn-primary w-[30rem] mt-10"
-                    >
-                      Edit Profile
-                    </Link>
-                  </div>
+          <div className="card-body">
+            {user.discount.length > 0 ? (
+              user.discount.map((voucher, index) => (
+                <div key={index} className="voucher-item">
+                  <p>
+                    Voucher: <br /> Diskon {voucher.discountPercentage}%
+                  </p>
+                  <p>
+                    Kadaluarsa:
+                    <br />
+                    {new Date(voucher.expired_date).toLocaleDateString('id', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
                 </div>
+              ))
+            ) : (
+              <p>No active vouchers</p>
+            )}
+            <p>
+              Poin: <br /> {user.totalActivePoints}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container">
+        <div className="card bg-base-100 shadow-xl p-4">
+          <div className="card-title">Biodata Diri</div>
+          <div className="card-body">
+            <div className="biodata-grid">
+              <div className="container max-md:w-[50%]">
+                <img
+                  src={user.userDetail?.photo_profile || 'N/A'}
+                  alt="Profile"
+                  className="w-[17rem] h-[17rem] object-cover max-md:w-[13rem] max-md:h-[13rem] max-sm:w-[9rem] max-sm:h-[9rem]"
+                />
+              </div>
+              <div className="container max-md:w-[100%]">
+                <table className="w-full h-auto">
+                  <tbody>
+                    <tr>
+                      <td className="w-[40%]">Username</td>
+                      <td className="w-[60%]">{user.username || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Nama Depan</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.nama_depan || 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Nama Belakang</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.nama_belakang || 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Email</td>
+                      <td className="w-[60%]">{user.email || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Tanggal Lahir</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.tanggal_lahir
+                          ? new Date(
+                              user.userDetail.tanggal_lahir,
+                            ).toLocaleDateString('id', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            })
+                          : 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Jenis Kelamin</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.jenis_kelamin
+                          ? formatGender(user.userDetail.jenis_kelamin)
+                          : 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Nomor Telepon</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.nomor_telepon || 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Kode Referral</td>
+                      <td className="w-[60%]">
+                        {user.referral?.myReferralCode || 'N/A'}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <Link
+                  href="/profile/edit-profile"
+                  className="btn btn-primary w-auto mt-10"
+                >
+                  Edit Profile
+                </Link>
               </div>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
+
+      {/* Displaying Discount Vouchers */}
     </div>
   );
 }
