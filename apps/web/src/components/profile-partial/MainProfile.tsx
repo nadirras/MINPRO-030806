@@ -72,6 +72,9 @@ export default function MainProfile() {
     return gender;
   }
 
+  const formatNumber = (number: number) => {
+    return new Intl.NumberFormat('de-DE').format(number);
+  };
   if (!user) {
     return <div>Loading...</div>;
   }
@@ -108,7 +111,7 @@ export default function MainProfile() {
               <p>No active vouchers</p>
             )}
             <p>
-              Poin: <br /> {user.totalActivePoints}
+              Poin: <br /> {formatNumber(user.totalActivePoints)}
             </p>
           </div>
         </div>
