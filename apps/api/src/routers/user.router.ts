@@ -1,20 +1,22 @@
-
-import { UserController } from "@/controllers/user.controller";
-import { Router } from "express";
-import { UserMiddleware } from "@/middlewares/user.middleware";
-import { uploader } from "@/helpers/uploader";
+import { UserController } from '@/controllers/user.controller';
+import { Router } from 'express';
+import { UserMiddleware } from '@/middlewares/user.middleware';
+import { uploader } from '@/helpers/uploader';
+import multer from 'multer';
+const upload = multer({ dest: 'public/uploads' });
 
 export class UserRouter {
-    private router: Router;
-    private userController : UserController;
-    private userMiddleware: UserMiddleware
-   
-    constructor(){
-        this.userController = new UserController();
-        this.userMiddleware = new UserMiddleware()
-        this.router = Router();
-        this.initializeRoutes()
-    }
+  private router: Router;
+  private userController: UserController;
+  private userMiddleware: UserMiddleware;
+
+  constructor() {
+    this.userController = new UserController();
+    this.userMiddleware = new UserMiddleware();
+    this.router = Router();
+    this.initializeRoutes();
+  }
+
 
     private initializeRoutes(): void {
         this.router.post('/', this.userController.createAccount)

@@ -2,13 +2,20 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
-export default function VerifyPage() {
+export default function VerifikasiEmail() {
   const params = useParams();
   const router = useRouter();
   const handleVerify = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/users/verify', {
+      const token = Cookies.get('token');
+      if (!token) {
+        console.log('false token');
+        return;
+      }
+
+      const res = await fetch(`http://localhost:8000/api/users/verify-email/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -18,7 +25,7 @@ export default function VerifyPage() {
       const data = await res.json();
       console.log(data);
       alert('Verify Success!');
-      router.push('/login');
+      router.push('/profile');
     } catch (error) {
       console.log(error);
     }

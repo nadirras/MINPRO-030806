@@ -8,6 +8,8 @@ import fs from 'fs';
 import handlebars from 'handlebars';
 import { transporter } from '../helpers/nodemailer';
 import dotenv from 'dotenv';
+import multer from 'multer';
+import jwt from 'jsonwebtoken';
 dotenv.config();
 // const databaseUrl = process.env.DATABASE_URL;
 const jwtKey = process.env.KEY_JWT;
@@ -64,7 +66,7 @@ export class UserController {
 
       const token = sign(payload, process.env.KEY_JWT!);
       //Prepare email template
-      const link = `http://localhost:3000/verify/${token}`;
+      const link = `http://localhost:3000/verifikasi/${token}`;
 
       const templatePath = path.join(
         __dirname,
@@ -278,6 +280,7 @@ export class UserController {
         nomor_telepon,
       } = req.body;
 
+
       console.log(req.file);
 
       // Validasi format tanggal_lahir (YYYY-MM-DD)
@@ -289,6 +292,7 @@ export class UserController {
       let existingUserDetail = await prisma.userDetail.findUnique({
         where: { userId },
       });
+
 
       if (!existingUserDetail) {
         // Create a new user detail if not found
@@ -404,6 +408,7 @@ export class UserController {
         return res.status(404).send({ message: 'Email not found.' });
       }
 
+
       const payload = {
         id: user.id,
         reset: true,
@@ -411,8 +416,8 @@ export class UserController {
 
       const reset_token = sign(payload, process.env.KEY_JWT!);
       //Prepare email template
-      const link = `http://localhost:8000/api/users/reset-password/${reset_token}`;
-      // const link = `http://localhost:3000/reset-password/${reset_token}`;
+      const link = `http://localhost:3000/reset-password/${reset_token}`;
+
 
       //Send email reset password
       const templatePath = path.join(
@@ -531,6 +536,7 @@ export class UserController {
         return res.status(404).json({ message: 'User not found.' });
       }
 
+
       // Check if the new email is already in use
       const existingUser = await prisma.user.findUnique({
         where: {
@@ -569,6 +575,7 @@ export class UserController {
         html,
       });
 
+
       // Send success response
       res.status(200).send({
         status: 'OK',
@@ -580,6 +587,7 @@ export class UserController {
     } catch (error) {
       console.error('Failed to change email:', error);
       res.status(500).send({ message: 'Failed to change email.' });
+
     }
   }
 
@@ -629,7 +637,53 @@ export class UserController {
     }
   }
 
+  //verify new wmail
+  async verifyChangeEmail(req: Request, res: Response) {
+    try {
+      // get token from req.params
+      let token: string | undefined = req.params.token;
+
+      if (!token) {
+        token =
+          (req.query.token as string) ||
+          req.headers.authorization?.replace('Bearer ', '');
+        if (!token) {
+          throw new Error('Token is required.');
+        }
+      }
+
+      // Verify token
+      const jwtKey = process.env.KEY_JWT!;
+      const verifyUser = jwt.verify(token, jwtKey) as {
+        id: number;
+        newEmail: string;
+      };
+
+      // Debug logging
+      console.log('Decoded token:', verifyUser);
+
+      if (!verifyUser.id || !verifyUser.newEmail) {
+        throw new Error('Invalid token payload');
+      }
+
+      //Update email in database
+      const updateUser = await prisma.user.update({
+        where: { id: verifyUser.id },
+        data: { email: verifyUser.newEmail },
+      });
+
+      res.status(200).send({
+        status: 'OK',
+        message: 'Email updated successfully.',
+        user: updateUser,
+      });
+    } catch (error) {
+      console.error('Failed to verify email change:', error);
+      res.status(500).send({ message: 'Failed to verify email change.' });
+    }
+  }
   //Get data by Id
+
   async GetDataById(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
@@ -640,7 +694,6 @@ export class UserController {
           .send({ status: 'error', message: 'Invalid user ID' });
       }
 
-      // Use Prisma to fetch all related data from different tables
       const userData = await prisma.user.findUnique({
         where: { id },
         select: {
@@ -668,14 +721,15 @@ export class UserController {
           discountVoucher: {
             where: {
               expired_date: {
+
                 gte: new Date(), // Filter vouchers that are not expired
+
               },
             },
           },
         },
       });
 
-      // Check if userData is found
       if (!userData) {
         return res.status(404).send({
           status: 'error',
@@ -686,7 +740,7 @@ export class UserController {
       // Initialize totalActivePoints to 0
       let totalActivePoints = 0;
 
-      // Check and update status of points based on expired_date
+
       for (const point of userData.Points) {
         if (point.expired_date < new Date()) {
           await prisma.points.update({
@@ -698,7 +752,9 @@ export class UserController {
         }
       }
 
+
       // Check and update status of discount vouchers based on expired_date
+
       for (const voucher of userData.discountVoucher) {
         if (voucher.expired_date < new Date()) {
           await prisma.discountVoucher.update({
@@ -708,13 +764,17 @@ export class UserController {
         }
       }
 
+
       // Structure the response
+
       const response = {
         id: userData.id,
         username: userData.username,
         email: userData.email,
         usedReferralCode: userData.usedReferralCode,
+
         role: userData.Role,
+
         userDetail: userData.UserDetail,
         referral: userData.referral,
         totalActivePoints,
@@ -735,6 +795,7 @@ export class UserController {
         status: 'error',
         message: 'Failed to fetch user data',
       });
+
     }
   }
 
@@ -918,6 +979,7 @@ export class UserController {
     } catch (error) {
       console.error('Failed to change role:', error);
       res.status(400).send({ message: 'Failed to change role' });
+
     }
   }
 }
