@@ -694,6 +694,47 @@ export class UserController {
     }
   }
   //Get data by Id
+  // async GetDataById(req: Request, res: Response) {
+  //   try {
+  //     const id = parseInt(req.params.id, 10);
+
+  //     if (isNaN(id)) {
+  //       return res
+  //         .status(400)
+  //         .json({ status: 'error', message: 'Invalid user ID' });
+  //     }
+
+  //     // Use Prisma to fetch all related data from different tables
+  //     const userData = await prisma.user.findUnique({
+  //       where: { id },
+  //       include: {
+  //         UserDetail: true,
+  //         referral: true,
+  //         discountVoucher: true,
+  //         Points: true,
+  //       },
+  //     });
+
+  //     // Check if userData is found
+  //     if (!userData) {
+  //       return res.status(404).json({
+  //         status: 'error',
+  //         message: 'User not found',
+  //       });
+  //     }
+
+  //     res.status(200).json({
+  //       status: 'success',
+  //       userData,
+  //     });
+  //   } catch (error) {
+  //     console.error('Error fetching user data by ID:', error);
+  //     res.status(500).json({
+  //       status: 'error',
+  //       message: 'Failed to fetch user data',
+  //     });
+  //   }
+  // }
   async GetDataById(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
@@ -701,35 +742,93 @@ export class UserController {
       if (isNaN(id)) {
         return res
           .status(400)
-          .json({ status: 'error', message: 'Invalid user ID' });
+          .send({ status: 'error', message: 'Invalid user ID' });
       }
 
-      // Use Prisma to fetch all related data from different tables
       const userData = await prisma.user.findUnique({
         where: { id },
-        include: {
-          UserDetail: true,
-          referral: true,
-          discountVoucher: true,
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          usedReferralCode: true,
+          UserDetail: {
+            select: {
+              nama_depan: true,
+              nama_belakang: true,
+              jenis_kelamin: true,
+              tanggal_lahir: true,
+              nomor_telepon: true,
+              photo_profile: true,
+            },
+          },
+          referral: {
+            select: {
+              myReferralCode: true,
+            },
+          },
           Points: true,
+          discountVoucher: {
+            where: {
+              expired_date: {
+                gte: new Date(),
+              },
+            },
+          },
         },
       });
 
-      // Check if userData is found
       if (!userData) {
-        return res.status(404).json({
+        return res.status(404).send({
           status: 'error',
           message: 'User not found',
         });
       }
 
-      res.status(200).json({
+      let totalActivePoints = 0;
+
+      for (const point of userData.Points) {
+        if (point.expired_date < new Date()) {
+          await prisma.points.update({
+            where: { id: point.id },
+            data: { point_status: 'Expired' },
+          });
+        } else if (point.point_status === 'Active') {
+          totalActivePoints += point.points;
+        }
+      }
+
+      for (const voucher of userData.discountVoucher) {
+        if (voucher.expired_date < new Date()) {
+          await prisma.discountVoucher.update({
+            where: { id: voucher.id },
+            data: { discount_status: 'Expired' },
+          });
+        }
+      }
+
+      const response = {
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        usedReferralCode: userData.usedReferralCode,
+        userDetail: userData.UserDetail,
+        referral: userData.referral,
+        totalActivePoints,
+        discount: userData.discountVoucher.map((voucher) => ({
+          discountCoupon: voucher.discountCoupon,
+          discountPercentage: voucher.discountPercentage,
+          expired_date: voucher.expired_date,
+        })),
+      };
+
+      res.status(200).send({
         status: 'success',
-        userData,
+        data: response,
       });
     } catch (error) {
       console.error('Error fetching user data by ID:', error);
-      res.status(500).json({
+      res.status(500).send({
         status: 'error',
         message: 'Failed to fetch user data',
       });

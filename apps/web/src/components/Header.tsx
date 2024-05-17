@@ -65,9 +65,10 @@ export const Header = () => {
           throw new Error('Failed to fetch user data');
         }
 
-        const userData = await res.json();
-        setIsUser(userData.userData);
-        console.log(userData.userData.UserDetail);
+        const responseData = await res.json();
+        setIsUser(responseData.data);
+        console.log('response navbar:', responseData);
+        console.log('response user navbar:', responseData.data);
       } catch (error) {
         console.error(error);
       }
@@ -75,17 +76,10 @@ export const Header = () => {
 
     fetchData();
   }, [token]);
-  // const handleEventCreatorClick = () => {
-  //   setIsEventCreator(!isEventCreator);
-  //   if (isEventCreator == false) {
-  //     router.push('/event-creator');
-  //   } else {
-  //     router.push('/');
-  //   }
-  // };
+
   return (
     <div className="drawer z-20 max-md:p-2 max-sm:p-3">
-      {/* <time dateTime="2030-10-25" suppressHydrationWarning /> */}
+      <time dateTime="2030-10-25" suppressHydrationWarning />
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content">
         {/* Navbar */}
@@ -139,45 +133,44 @@ export const Header = () => {
                   <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
               </label>
-              {isUser && (
-                <div className="max-md:hidden dropdown dropdown-end">
-                  <div
-                    tabIndex={0}
-                    role="button"
-                    className="btn btn-ghost btn-circle avatar"
-                  >
-                    <div className="w-10 rounded-full">
-                      <img
-                        alt="Tailwind CSS Navbar component"
-                        src={isUser.UserDetail?.photo_profile}
-                      />
-                    </div>
+
+              <div className="max-md:hidden dropdown dropdown-end">
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn btn-ghost btn-circle avatar"
+                >
+                  <div className="w-10 rounded-full">
+                    <img
+                      alt="Tailwind CSS Navbar component"
+                      src={isUser?.userDetail?.photo_profile}
+                    />
                   </div>
-                  <ul
-                    tabIndex={0}
-                    className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
-                  >
-                    <li>
-                      <Link href="/">Beranda</Link>
-                    </li>
-                    <li>
-                      <Link href="/jelajah">Jelajah</Link>
-                    </li>
-                    <li>
-                      <Link href="/keranjang">Keranjang</Link>
-                    </li>
-                    <li>
-                      <Link href="/event-creator">Event Saya</Link>
-                    </li>
-                    <li>
-                      <Link href="/profile">Profile</Link>
-                    </li>
-                    <li>
-                      <a onClick={onLogout}>Logout</a>
-                    </li>
-                  </ul>
                 </div>
-              )}
+                <ul
+                  tabIndex={0}
+                  className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
+                >
+                  <li>
+                    <Link href="/">Beranda</Link>
+                  </li>
+                  <li>
+                    <Link href="/jelajah">Jelajah</Link>
+                  </li>
+                  <li>
+                    <Link href="/keranjang">Keranjang</Link>
+                  </li>
+                  <li>
+                    <Link href="/event-creator">Event Saya</Link>
+                  </li>
+                  <li>
+                    <Link href="/profile">Profile</Link>
+                  </li>
+                  <li>
+                    <a onClick={onLogout}>Logout</a>
+                  </li>
+                </ul>
+              </div>
             </div>
           )}
 

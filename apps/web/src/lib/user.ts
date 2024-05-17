@@ -115,11 +115,12 @@ export const changeEmail = async (
 ): Promise<any> => {
   const res = await fetch(`http://localhost:8000/api/users/change-email`, {
     method: 'POST',
-    body: JSON.stringify(data),
+
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify(data),
     // body: data,
   });
   const result = await res.json();

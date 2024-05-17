@@ -113,7 +113,7 @@ a {
 .grid-profile {
   display: grid;
   place-content: center;
-  grid-template-columns: 1fr 4fr;
+  grid-template-columns: 1fr 2fr;
   gap: 1rem;
 }
 

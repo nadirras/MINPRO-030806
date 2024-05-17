@@ -5,9 +5,11 @@ import Cookies from 'js-cookie';
 import Link from 'next/link';
 
 export interface IUser {
+  id: number;
   username: string;
   email: string;
-  UserDetail: {
+  usedReferralCode: string | null;
+  userDetail: {
     nama_depan: string;
     nama_belakang: string;
     jenis_kelamin: string;
@@ -17,13 +19,13 @@ export interface IUser {
   } | null;
   referral: {
     myReferralCode: string;
-  };
+  } | null;
   totalActivePoints: number;
-  discountVoucher: {
+  discount: {
     discountCoupon: string;
     discountPercentage: number;
     expired_date: string;
-  };
+  }[];
 }
 
 export default function MainProfile() {
@@ -40,7 +42,7 @@ export default function MainProfile() {
         }
         const decodedToken = JSON.parse(atob(token.split('.')[1]));
         const userId = decodedToken.id;
-        console.log(userId);
+
         const res = await fetch(`http://localhost:8000/api/users/${userId}`, {
           method: 'GET',
           headers: {
@@ -53,10 +55,8 @@ export default function MainProfile() {
           throw new Error('Failed to fetch user data');
         }
 
-        const userData = await res.json();
-        console.log(userData.userData.UserDetail);
-        setUser(userData.userData);
-        console.log(userData.UserData.photo_profile);
+        const responseData = await res.json();
+        setUser(responseData.data);
       } catch (error) {
         console.error(error);
       }
@@ -78,121 +78,126 @@ export default function MainProfile() {
 
   return (
     <div className="grid-profile h-screen mx-10">
-      {user && (
-        <>
-          <div className="container">
-            <time dateTime="2030-10-25" suppressHydrationWarning />
-            <div className="card bg-base-100 shadow-xl p-4">
-              <div className="card-title">
-                {user.UserDetail?.nama_depan || 'N/A'}{' '}
-                {user.UserDetail?.nama_belakang || 'N/A'}
+      <div className="container">
+        <time dateTime="2030-10-25" suppressHydrationWarning />
+        <div className="card bg-base-100 shadow-xl p-4">
+          <div className="card-title">
+            {user.userDetail?.nama_depan || 'N/A'}{' '}
+            {user.userDetail?.nama_belakang || 'N/A'}
+          </div>
+
+          <div className="card-body">
+            {user.discount.length > 0 ? (
+              user.discount.map((voucher, index) => (
+                <div key={index} className="voucher-item">
+                  <p>
+                    Voucher: <br /> Diskon {voucher.discountPercentage}%
+                  </p>
+                  <p>
+                    Kadaluarsa:
+                    <br />
+                    {new Date(voucher.expired_date).toLocaleDateString('id', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p>No active vouchers</p>
+            )}
+            <p>
+              Poin: <br /> {user.totalActivePoints}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container">
+        <div className="card bg-base-100 shadow-xl p-4">
+          <div className="card-title">Biodata Diri</div>
+          <div className="card-body">
+            <div className="biodata-grid">
+              <div className="container max-md:w-[50%]">
+                <img
+                  src={user.userDetail?.photo_profile || 'N/A'}
+                  alt="Profile"
+                  className="w-[17rem] h-[17rem] object-cover max-md:w-[13rem] max-md:h-[13rem] max-sm:w-[9rem] max-sm:h-[9rem]"
+                />
               </div>
-              <div className="card-body">
-                <table>
+              <div className="container max-md:w-[100%]">
+                <table className="w-full h-auto">
                   <tbody>
                     <tr>
-                      <td>Poin</td>
-                      <td>asdf</td>
+                      <td className="w-[40%]">Username</td>
+                      <td className="w-[60%]">{user.username || 'N/A'}</td>
                     </tr>
                     <tr>
-                      <td>List</td>
+                      <td className="w-[40%]">Nama Depan</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.nama_depan || 'N/A'}
+                      </td>
                     </tr>
                     <tr>
-                      <td>Voucher</td>
+                      <td className="w-[40%]">Nama Belakang</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.nama_belakang || 'N/A'}
+                      </td>
                     </tr>
                     <tr>
-                      <td>Review</td>
+                      <td className="w-[40%]">Email</td>
+                      <td className="w-[60%]">{user.email || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Tanggal Lahir</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.tanggal_lahir
+                          ? new Date(
+                              user.userDetail.tanggal_lahir,
+                            ).toLocaleDateString('id', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            })
+                          : 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Jenis Kelamin</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.jenis_kelamin
+                          ? formatGender(user.userDetail.jenis_kelamin)
+                          : 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Nomor Telepon</td>
+                      <td className="w-[60%]">
+                        {user.userDetail?.nomor_telepon || 'N/A'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="w-[40%]">Kode Referral</td>
+                      <td className="w-[60%]">
+                        {user.referral?.myReferralCode || 'N/A'}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
+                <Link
+                  href="/profile/edit-profile"
+                  className="btn btn-primary w-auto mt-10"
+                >
+                  Edit Profile
+                </Link>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="container">
-            <div className="card bg-base-100 shadow-xl p-4">
-              <div className="card-title">Biodata Diri</div>
-              <div className="card-body">
-                <div className="biodata-grid">
-                  <div className="container max-md:w-[50%]">
-                    <img
-                      src={user.UserDetail?.photo_profile || 'N/A'}
-                      alt="Profile"
-                      className="w-[17rem] h-[17rem] object-cover max-md:w-[13rem] max-md:h-[13rem] max-sm:w-[9rem] max-sm:h-[9rem]"
-                    />
-                  </div>
-                  <div className="container max-md:w-[100%]">
-                    <table className="w-full h-auto">
-                      <tbody>
-                        <tr>
-                          <td className="w-[40%]">Username</td>
-                          <td className="w-[60%]">{user.username || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                          <td className="w-[40%]">Nama Depan</td>
-                          <td className="w-[60%]">
-                            {user.UserDetail?.nama_depan || 'N/A'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="w-[40%]">Nama Belakang</td>
-                          <td className="w-[60%]">
-                            {user.UserDetail?.nama_belakang || 'N/A'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="w-[40%]">Email</td>
-                          <td className="w-[60%]">{user.email || 'N/A'}</td>
-                        </tr>
-                        <tr>
-                          <td className="w-[40%]">Tanggal Lahir</td>
-                          <td className="w-[60%]">
-                            {user.UserDetail?.tanggal_lahir
-                              ? new Date(
-                                  user.UserDetail?.tanggal_lahir,
-                                ).toLocaleDateString('id', {
-                                  day: '2-digit',
-                                  month: 'long',
-                                  year: 'numeric',
-                                })
-                              : 'N/A'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="w-[40%]">Jenis Kelamin</td>
-                          <td className="w-[60%]">
-                            {user.UserDetail?.jenis_kelamin
-                              ? formatGender(user.UserDetail?.jenis_kelamin)
-                              : 'N/A'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="w-[40%]">Nomor Telepon</td>
-                          <td className="w-[60%]">
-                            {user.UserDetail?.nomor_telepon || 'N/A'}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="w-[40%]">Kode Referral</td>
-                          <td className="w-[60%]">
-                            {user.referral?.myReferralCode || 'N/A'}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    <Link
-                      href="/profile/edit-profile"
-                      className="btn btn-primary w-auto mt-10"
-                    >
-                      Edit Profile
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Displaying Discount Vouchers */}
     </div>
   );
 }

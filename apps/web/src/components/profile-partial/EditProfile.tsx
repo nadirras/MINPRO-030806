@@ -91,8 +91,7 @@ export default function EditProfile() {
         }
 
         const userData = await res.json();
-        setIsUser(userData.userData);
-        console.log(userData.userData.UserDetail);
+        setIsUser(userData.data);
       } catch (error) {
         console.error(error);
       }
@@ -105,12 +104,12 @@ export default function EditProfile() {
       {isUser && (
         <Formik
           initialValues={{
-            nama_depan: isUser.UserDetail?.nama_depan,
-            nama_belakang: isUser.UserDetail?.nama_belakang,
-            jenis_kelamin: isUser.UserDetail?.jenis_kelamin,
+            nama_depan: isUser.userDetail?.nama_depan,
+            nama_belakang: isUser.userDetail?.nama_belakang,
+            jenis_kelamin: isUser.userDetail?.jenis_kelamin,
             tanggal_lahir: '2003-01-01',
-            nomor_telepon: isUser.UserDetail?.nomor_telepon,
-            photo_profile: isUser.UserDetail?.photo_profile,
+            nomor_telepon: isUser.userDetail?.nomor_telepon,
+            photo_profile: isUser.userDetail?.photo_profile,
           }}
           validationSchema={EditSchema}
           onSubmit={(values, actions) => {
@@ -126,7 +125,7 @@ export default function EditProfile() {
                   name="nama_depan"
                   type="text"
                   className="grow"
-                  placeholder={isUser.UserDetail?.nama_depan}
+                  placeholder={isUser.userDetail?.nama_depan}
                 />
                 {/* <ErrorMessage
                     name="nama_depan"
@@ -140,7 +139,7 @@ export default function EditProfile() {
                   name="nama_belakang"
                   type="text"
                   className="grow"
-                  placeholder={isUser.UserDetail?.nama_belakang}
+                  placeholder={isUser.userDetail?.nama_belakang}
                 />
                 {/* <ErrorMessage
                     name="nama_belakang"
@@ -191,7 +190,7 @@ export default function EditProfile() {
                   name="nomor_telepon"
                   type="text"
                   className="grow"
-                  placeholder={isUser.UserDetail?.nomor_telepon}
+                  placeholder={isUser.userDetail?.nomor_telepon}
                 />
                 {/* <ErrorMessage
                     name="nomor_telepon"
