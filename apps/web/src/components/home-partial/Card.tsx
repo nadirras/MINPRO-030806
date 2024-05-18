@@ -1,24 +1,40 @@
-import React from 'react';
+'use client';
+import React, { useEffect, useState } from 'react';
+import { IEvent } from '@/type/event';
+import EventCard from './EventCard'; // Import the component to display individual events
 
 export default function Card() {
+  const [events, setEvents] = useState<IEvent[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/api/events`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!res.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const responseData = await res.json();
+        setEvents(responseData.eventData); // Set the array of events
+        console.log(responseData.eventData[0].eventSlug);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
-    <div className="py-3 pl-4">
-      <h1 className="text-2xl font-bold">Event Pilihan</h1>
-      <div className="card card-compact w-96 bg-base-100 shadow-xl">
-        <figure>
-          <img
-            src="https://daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.jpg"
-            alt="Shoes"
-          />
-        </figure>
-        <div className="card-body">
-          <h2 className="card-title">Shoes!</h2>
-          <p>If a dog chews shoes whose shoes does he choose?</p>
-          <div className="card-actions justify-end">
-            <button className="btn btn-primary">Buy Now</button>
-          </div>
-        </div>
-      </div>
+    <div className="py-3 pl-4 z-0">
+      <h1 className="text-2xl font-bold">Events</h1>
+      {events.map((event) => (
+        <EventCard key={event.id} event={event} /> // Render EventCard component for each event
+      ))}
     </div>
   );
 }

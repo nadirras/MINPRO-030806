@@ -3,6 +3,7 @@ import { useAppSelector } from '@/lib/features/hooks';
 import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
+import ChangeRole from './ChangeRole';
 
 export interface IUser {
   id: number;
@@ -26,6 +27,7 @@ export interface IUser {
     discountPercentage: number;
     expired_date: string;
   }[];
+  role: string;
 }
 
 export default function MainProfile() {
@@ -57,6 +59,7 @@ export default function MainProfile() {
 
         const responseData = await res.json();
         setUser(responseData.data);
+        // console.log('from mainprofile:', responseData);
       } catch (error) {
         console.error(error);
       }
@@ -80,8 +83,8 @@ export default function MainProfile() {
   }
 
   return (
-    <div className="grid-profile h-screen mx-10">
-      <div className="container">
+    <div className="grid-profile  mx-10">
+      <div className="container flex flex-col gap-4">
         <time dateTime="2030-10-25" suppressHydrationWarning />
         <div className="card bg-base-100 shadow-xl p-4">
           <div className="card-title">
@@ -115,6 +118,7 @@ export default function MainProfile() {
             </p>
           </div>
         </div>
+        <ChangeRole />
       </div>
 
       <div className="container">
@@ -130,31 +134,35 @@ export default function MainProfile() {
                 />
               </div>
               <div className="container max-md:w-[100%]">
-                <table className="w-full h-auto">
+                <table className="w-full h-auto ">
                   <tbody>
                     <tr>
-                      <td className="w-[40%]">Username</td>
-                      <td className="w-[60%]">{user.username || 'N/A'}</td>
+                      <td className="w-[40%] text-left">Username </td>
+                      <td className="w-[60%] text-center">
+                        {user.username || 'N/A'}
+                      </td>
                     </tr>
                     <tr>
-                      <td className="w-[40%]">Nama Depan</td>
-                      <td className="w-[60%]">
+                      <td className="w-[40%] text-left">Nama Depan </td>
+                      <td className="w-[60%] text-center">
                         {user.userDetail?.nama_depan || 'N/A'}
                       </td>
                     </tr>
                     <tr>
-                      <td className="w-[40%]">Nama Belakang</td>
-                      <td className="w-[60%]">
+                      <td className="w-[40%] text-left">Nama Belakang </td>
+                      <td className="w-[60%] text-center">
                         {user.userDetail?.nama_belakang || 'N/A'}
                       </td>
                     </tr>
                     <tr>
-                      <td className="w-[40%]">Email</td>
-                      <td className="w-[60%]">{user.email || 'N/A'}</td>
+                      <td className="w-[40%]  text-left">Email </td>
+                      <td className="w-[60%] text-center">
+                        {user.email || 'N/A'}
+                      </td>
                     </tr>
                     <tr>
-                      <td className="w-[40%]">Tanggal Lahir</td>
-                      <td className="w-[60%]">
+                      <td className="w-[40%]">Tanggal Lahir </td>
+                      <td className="w-[60%] text-center">
                         {user.userDetail?.tanggal_lahir
                           ? new Date(
                               user.userDetail.tanggal_lahir,
@@ -167,22 +175,22 @@ export default function MainProfile() {
                       </td>
                     </tr>
                     <tr>
-                      <td className="w-[40%]">Jenis Kelamin</td>
-                      <td className="w-[60%]">
+                      <td className="w-[40%]">Jenis Kelamin </td>
+                      <td className="w-[60%] text-center">
                         {user.userDetail?.jenis_kelamin
                           ? formatGender(user.userDetail.jenis_kelamin)
                           : 'N/A'}
                       </td>
                     </tr>
                     <tr>
-                      <td className="w-[40%]">Nomor Telepon</td>
-                      <td className="w-[60%]">
+                      <td className="w-[40%]">Nomor Telepon </td>
+                      <td className="w-[60%] text-center">
                         {user.userDetail?.nomor_telepon || 'N/A'}
                       </td>
                     </tr>
                     <tr>
                       <td className="w-[40%]">Kode Referral</td>
-                      <td className="w-[60%]">
+                      <td className="w-[60%] text-center">
                         {user.referral?.myReferralCode || 'N/A'}
                       </td>
                     </tr>
