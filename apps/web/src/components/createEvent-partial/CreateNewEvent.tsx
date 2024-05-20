@@ -30,11 +30,15 @@ const EditSchema = yup.object().shape({
   // eventImgOrganizer: yup.string().required(),
   contactPerson: yup.string().required(),
   contactPersonNumber: yup.string().required(),
-  isPaid: yup.boolean().required(),
+  // isPaid: yup.boolean().required(),
   ticketPrice: yup.number().required(),
 });
 
-export default function CreateNewEvent() {
+export default function CreateNewEvent({
+  params,
+}: {
+  params: { token: string };
+}) {
   const [isEvent, setIsEvent] = useState<IEvent | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [cities, setCities] = useState<string[]>([]);
@@ -43,10 +47,10 @@ export default function CreateNewEvent() {
 
   const onEdit = async (data: any) => {
     try {
-      const token = Cookies.get('token');
-      if (!token) {
-        console.log('No Token found');
-      }
+      // const token = Cookies.get('token');
+      // if (!token) {
+      //   console.log('No Token found');
+      // }
       const tanggalMulai = new Date(data.startDate);
       const tanggalAkhir = new Date(data.endDate);
       if (isNaN(tanggalMulai.getTime()) || isNaN(tanggalAkhir.getTime())) {
@@ -74,13 +78,13 @@ export default function CreateNewEvent() {
       // formData.set('eventImgOrganizer', data.eventImgOrganizer);
       formData.set('contactPerson', data.contactPerson);
       formData.set('contactPersonNumber', data.contactPersonNumber);
-      formData.set('isPaid', data.isPaid);
+      // formData.set('isPaid', data.isPaid);
       formData.set('ticketPrice', data.ticketPrice);
       if (file) {
         formData.set('file', file);
       }
 
-      const res = await createEvent(formData, token);
+      const res = await createEvent(formData);
       if (res.error) {
         console.error('Error post new event: ', res.error);
         return;
@@ -407,7 +411,7 @@ export default function CreateNewEvent() {
                     className="text-sm text-red-500"
                   />
                 </label>
-                <label className="input input-bordered flex items-center gap-2">
+                {/* <label className="input input-bordered flex items-center gap-2">
                   Tipe Event
                   <Field as="select" name="isPaid" className="grow bg-base-100">
                     <option value="" label="Pilih kategori" />
@@ -419,7 +423,7 @@ export default function CreateNewEvent() {
                     component="div"
                     className="text-sm text-red-500"
                   />
-                </label>
+                </label> */}
                 <label className="input input-bordered flex items-center gap-2">
                   Harga Tiket
                   <Field

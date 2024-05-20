@@ -1,37 +1,44 @@
 'use client';
 import React from 'react';
-import Link from 'next/link'; // Import Link from Next.js
 import { IEvent } from '@/type/event';
+import { useRouter } from 'next/navigation';
 
-interface Props {
+interface EventCardProps {
   event: IEvent;
+  isLoggedIn: boolean;
 }
 
-const EventCard: React.FC<Props> = ({ event }) => {
-  console.log(event);
-  console.log('slug', event?.eventSlug);
+const EventCard: React.FC<EventCardProps> = ({ event, isLoggedIn }) => {
+  const router = useRouter();
+
+  const handleClick = () => {
+    if (isLoggedIn) {
+      router.push(`/event-detail/${event.eventSlug}`);
+    } else {
+      router.push('/login');
+    }
+  };
+
   return (
-    <div className="card card-compact w-96 bg-base-100 shadow-xl">
-      <figure>
-        <img src={event.eventImage} />
+    <div className="card card-compact w-[20rem] bg-base-100 shadow-xl">
+      <figure className="max-h-[10rem]">
+        <img
+          src={event.eventImage}
+          alt={event.eventName}
+          className="object-cover"
+        />
       </figure>
       <div className="card-body">
-        <h2>{event.eventName}</h2>
+        <h2 className="font-bold text-xl">{event.eventName}</h2>
         <p>{event.eventOrganizer.eventOrganizer}</p>
         <p>Ticket Price: {event.EventPrice.ticketPrice}</p>
         <p>Available Seats: {event.availableSeats}</p>
         <p>Location: {event.location}</p>
         <p>Date: {new Date(event.startDate).toLocaleDateString()}</p>
         <div className="card-actions justify-end">
-          <Link
-            href={`/event-detail/${event?.eventSlug}`}
-            className="btn btn-primary"
-          >
-            Detail{' '}
-          </Link>
-          {/* <Link href={`/event-detail/${event.EventData.eventSlug}`}>
-            <a className="btn btn-primary">Detail</a>
-          </Link> */}
+          <button className="btn btn-primary" onClick={handleClick}>
+            Detail
+          </button>
         </div>
       </div>
     </div>

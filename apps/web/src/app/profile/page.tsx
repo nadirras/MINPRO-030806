@@ -4,7 +4,7 @@ import React from 'react';
 
 export default function ProfilePage() {
   return (
-    <div>
+    <div className="h-screen">
       <MainProfile />
     </div>
   );

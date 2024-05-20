@@ -123,6 +123,28 @@ a {
   gap: 1rem;
 }
 
+/* Fade-in animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease-in-out;
+}
+
+.animate-fadeIn.delay-150 {
+  animation-delay: 0.15s;
+}
+
+.animate-fadeIn.delay-300 {
+  animation-delay: 0.3s;
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;

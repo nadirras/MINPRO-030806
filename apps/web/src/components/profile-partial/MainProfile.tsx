@@ -83,7 +83,7 @@ export default function MainProfile() {
   }
 
   return (
-    <div className="grid-profile  mx-10">
+    <div className="grid-profile  mx-10 -z-0">
       <div className="container flex flex-col gap-4">
         <time dateTime="2030-10-25" suppressHydrationWarning />
         <div className="card bg-base-100 shadow-xl p-4">

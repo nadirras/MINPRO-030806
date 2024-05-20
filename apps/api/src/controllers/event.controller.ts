@@ -5,7 +5,7 @@ export class EventController {
   //Get Event Data
   async getEvent(req: Request, res: Response) {
     try {
-      const { province, category, isPaid } = req.query;
+      const { province, category, isPaid, search } = req.query;
 
       const filters: any = {};
 
@@ -20,9 +20,20 @@ export class EventController {
         filters.eventCategory = String(category);
       }
 
-      if (isPaid !== undefined) {
+      // if (isPaid !== undefined) {
+      //   filters.EventPrice = {
+      //     isPaid: isPaid === 'true',
+      //   };
+      // }
+      if (isPaid === 'true' || isPaid === 'false') {
         filters.EventPrice = {
           isPaid: isPaid === 'true',
+        };
+      }
+
+      if (search) {
+        filters.eventName = {
+          contains: search,
         };
       }
 
@@ -99,11 +110,8 @@ export class EventController {
         zona_waktu,
         location,
         province,
-        isPaid,
         ticketPrice,
       } = req.body;
-
-      // console.log("Request Body:", req.body);
 
       // Validasi format startDate (YYYY-MM-DD)
       if (!startDate || !/^(\d{4})-(\d{2})-(\d{2})$/.test(startDate)) {
@@ -133,7 +141,6 @@ export class EventController {
         !zona_waktu ||
         !location ||
         !province ||
-        isPaid === undefined ||
         ticketPrice === undefined
       ) {
         return res
@@ -172,7 +179,10 @@ export class EventController {
         });
       }
 
-      //Create Event
+      // Determine if the event is paid or free based on ticketPrice
+      const isPaid = parseInt(ticketPrice) > 0;
+
+      // Create Event
       const newEvent = await prisma.event.create({
         data: {
           eventCategory,
@@ -199,7 +209,7 @@ export class EventController {
           },
           EventPrice: {
             create: {
-              isPaid: Boolean(isPaid),
+              isPaid: isPaid,
               ticketPrice: parseInt(ticketPrice),
             },
           },
@@ -219,7 +229,7 @@ export class EventController {
         event: newEvent,
       });
     } catch (error) {
-      console.error('Failed to verify account:', error);
+      console.error('Failed to create event:', error);
       res.status(400).send({
         status: 'error',
         message: 'Failed to create event',
@@ -228,21 +238,69 @@ export class EventController {
   }
 
   //Get Data by slug
+
   async getEventSlug(req: Request, res: Response) {
     try {
-      const events = await prisma.event.findUnique({
+      const event = await prisma.event.findUnique({
         where: {
           eventSlug: req.params.slug,
         },
+        include: {
+          eventOrganizer: {
+            select: {
+              id: true,
+              userId: true,
+              eventOrganizer: true,
+              eventImgOrganizer: true,
+              contactPerson: true,
+              contactPersonNumber: true,
+            },
+          },
+          EventPrice: {
+            select: {
+              id: true,
+              isPaid: true,
+              ticketPrice: true,
+            },
+          },
+        },
       });
+
+      if (!event) {
+        return res.status(400).send({
+          status: 'error',
+          message: 'Event not found',
+        });
+      }
+
       res.status(200).send({
-        status: 'ok',
-        events,
+        status: 'OK',
+        eventData: {
+          id: event.id,
+          eventOrganizerId: event.eventOrganizerId,
+          eventCategory: event.eventCategory,
+          eventName: event.eventName,
+          eventSlug: event.eventSlug,
+          eventImage: event.eventImage,
+          description: event.description || '',
+          availableSeats: event.availableSeats,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          zona_waktu: event.zona_waktu,
+          location: event.location,
+          province: event.province,
+          eventStatus: event.eventStatus,
+          eventOrganizer: event.eventOrganizer,
+          EventPrice: event.EventPrice,
+        },
       });
     } catch (err) {
+      console.error(err);
       res.status(400).send({
         status: 'error',
-        message: err,
+        message: 'Internal Server Error',
       });
     }
   }
@@ -250,7 +308,7 @@ export class EventController {
   //Update Event
   async updateEvent(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { slug } = req.params; // Corrected destructuring of slug
       const {
         eventOrganizer,
         contactPerson,
@@ -293,7 +351,8 @@ export class EventController {
           .status(400)
           .send({ error: 'End date must be in the format YYYY-MM-DD.' });
       }
-      // Generate eventSlug from title (eventName)
+
+      // Generate eventSlug from title (eventName) if eventName is provided
       const eventSlug = eventName
         ? eventName.toLowerCase().replaceAll(' ', '-')
         : undefined;
@@ -314,11 +373,11 @@ export class EventController {
       }
 
       const updatedEvent = await prisma.event.update({
-        where: { id: parseInt(id) },
+        where: { eventSlug: req.params.slug }, // Use slug correctly
         data: {
           eventCategory,
           eventName,
-          eventSlug,
+          eventSlug: eventSlug || slug, // Use existing slug if eventName is not provided
           eventImage: ImgEvent,
           description,
           availableSeats: availableSeats ? parseInt(availableSeats) : undefined,
@@ -371,6 +430,43 @@ export class EventController {
       res.status(400).send({
         status: 'error',
         message: 'Failed to update event',
+      });
+    }
+  }
+
+  async getEventbyUserId(req: Request, res: Response) {
+    const { userId } = req.params;
+    try {
+      const events = await prisma.event.findMany({
+        where: {
+          eventOrganizer: {
+            user: {
+              id: Number(userId),
+            },
+          },
+        },
+        include: {
+          eventOrganizer: true,
+          EventPrice: true,
+        },
+      });
+
+      if (!events || events.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Events not found for the specified user',
+        });
+      }
+
+      res.status(200).json({
+        status: 'success',
+        events,
+      });
+    } catch (error) {
+      console.error('Failed to get events by user ID:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to get events',
       });
     }
   }

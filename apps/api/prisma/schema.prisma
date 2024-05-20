@@ -122,7 +122,7 @@ model Referral {
 model DiscountVoucher {
   //menyimpan data voucher diskon yang dimiliki user
   id                 Int            @id @default(autoincrement())
-  user               User?           @relation(fields: [userId], references: [id])
+  user               User?          @relation(fields: [userId], references: [id])
   userId             Int
   discountCoupon     String
   discountPercentage Int
@@ -147,7 +147,7 @@ model EventOrganizer {
   id                  Int     @id @default(autoincrement())
   user                User    @relation(fields: [userId], references: [id])
   userId              Int
-  eventOrganizer      String  @unique //biar gak ada event organizer dobel
+  eventOrganizer      String
   eventImgOrganizer   String  @db.LongText
   contactPerson       String
   contactPersonNumber String
@@ -172,7 +172,7 @@ model Event {
   zona_waktu       ZonaWaktu
   location         String
   province         String
-  eventStatus       EventStatus
+  eventStatus      EventStatus
   CartItem         CartItem[]
   OrderItem        OrderItem[]
   Review           Review[]

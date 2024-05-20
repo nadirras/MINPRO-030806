@@ -1,4 +1,12 @@
-import express, {json, urlencoded, Express, Request, Response, NextFunction, Router,} from 'express';
+import express, {
+  json,
+  urlencoded,
+  Express,
+  Request,
+  Response,
+  NextFunction,
+  Router,
+} from 'express';
 import cors from 'cors';
 import { PORT } from './config';
 import { SampleRouter } from './routers/sample.router';
@@ -19,7 +27,7 @@ export default class App {
     this.app.use(cors());
     this.app.use(json());
     this.app.use(urlencoded({ extended: true }));
-    this.app.use('/public', express.static(path.join(__dirname, '../public')))
+    this.app.use('/public', express.static(path.join(__dirname, '../public')));
   }
 
   private handleError(): void {
@@ -47,14 +55,14 @@ export default class App {
 
   private routes(): void {
     // const sampleRouter = new SampleRouter();
-    const apiRouter = new ApiRouter()
+    const apiRouter = new ApiRouter();
 
     this.app.get('/', (req: Request, res: Response) => {
       res.send(`Welcome to My API!`);
     });
 
     // this.app.use('/samples', sampleRouter.getRouter());
-    this.app.use('/api', apiRouter.getRouter())
+    this.app.use('/api', apiRouter.getRouter());
   }
 
   public start(): void {

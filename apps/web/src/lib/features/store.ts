@@ -1,13 +1,19 @@
 import {
   Action,
   ThunkAction,
+  combineReducers,
   combineSlices,
   configureStore,
 } from '@reduxjs/toolkit';
 import { userSlice } from './user/userSlice';
 import { eventSlice } from './event/eventSlice';
+import { cartSlice } from './cart/cartSlice';
 
-const rootReducer = combineSlices(userSlice, eventSlice);
+const rootReducer = combineReducers({
+  user: userSlice.reducer,
+  event: eventSlice.reducer,
+  cart: cartSlice.reducer,
+});
 export type RootState = ReturnType<typeof rootReducer>;
 export const makeStore = () => {
   return configureStore({

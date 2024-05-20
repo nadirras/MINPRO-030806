@@ -11,7 +11,7 @@ export default function Home() {
       <Carousel />
       <Card />
       <Trending />
-      <UpcomingTrendingEvent />
+      {/* <UpcomingTrendingEvent /> */}
     </div>
   );
 }

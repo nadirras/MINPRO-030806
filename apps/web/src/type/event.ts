@@ -1,6 +1,14 @@
 import { Key, ReactNode } from 'react';
 
 export interface IEvent {
+  eventStatus: string;
+  province: string;
+  zona_waktu: string;
+  endTime: string;
+  startTime: string;
+  endDate: string;
+  description: string;
+  eventCategory: string;
   eventSlug(arg0: string, eventSlug: any): unknown;
   startDate: string | number | Date;
   location: string; // Ensure location is always a string

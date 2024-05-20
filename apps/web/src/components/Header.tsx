@@ -7,6 +7,7 @@ import { setUser } from '@/lib/features/user/userSlice';
 import { usePathname, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import { IUser } from './profile-partial/MainProfile';
+import { clearCart } from '@/lib/features/cart/cartSlice';
 
 export const Header = () => {
   const [isUser, setIsUser] = useState<IUser | null>(null);
@@ -19,6 +20,7 @@ export const Header = () => {
 
   const onLogout = () => {
     dispatch(setUser(null));
+    dispatch(clearCart());
     Cookies.remove('token');
     router.push('/login');
   };
@@ -110,7 +112,7 @@ export const Header = () => {
   };
 
   return (
-    <div className="drawer z-100 max-md:p-2 max-sm:p-3">
+    <div className="drawer z-[999] max-md:p-2 max-sm:p-3">
       <time dateTime="2030-10-25" suppressHydrationWarning />
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content">
@@ -120,13 +122,6 @@ export const Header = () => {
           </div>
           {token && (
             <div className="flex-none gap-2">
-              <div className="form-control">
-                <input
-                  type="text"
-                  placeholder="Cari Event"
-                  className="input input-bordered search-bar"
-                />
-              </div>
               <ul className="menu menu-horizontal flex gap-2 max-md:hidden list-nav">
                 {renderMenuItems()}
               </ul>
