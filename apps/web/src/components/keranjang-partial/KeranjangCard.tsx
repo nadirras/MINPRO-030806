@@ -1,7 +1,6 @@
 'use client';
 import {
   clearCartItem,
-  removeCartItem,
   setCart,
   updateCartItem,
 } from '@/lib/features/cart/cartSlice';
@@ -47,13 +46,8 @@ export const KeranjangCard: React.FC<KeranjangCardProps> = ({ cart }) => {
       const updatedItem = await res.json();
       setQuantity(updatedItem.quantity);
 
-      if (updatedItem.quantity === 0) {
-        // If the quantity becomes 0, remove the item from the cart
-        dispatch<any>(removeCartItem({ eventId: updatedItem.eventId }));
-      } else {
-        // Otherwise, update the cart item
-        dispatch(updateCartItem(updatedItem));
-      }
+      // Otherwise, update the cart item
+      dispatch(updateCartItem(updatedItem));
     } catch (error) {
       console.error('Error updating cart:', error);
     }
