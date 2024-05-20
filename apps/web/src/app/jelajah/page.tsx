@@ -4,8 +4,8 @@ import React from 'react';
 
 export default function JelajahPage() {
   return (
-    <div className="flex gap-3">
-      <Filter />
+    <div>
+      {/* <Filter /> */}
       <Content />
     </div>
   );

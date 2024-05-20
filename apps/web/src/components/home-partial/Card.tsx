@@ -1,23 +1,63 @@
-import React from 'react';
+'use client';
+import React, { useEffect, useState } from 'react';
+import { IEvent } from '@/type/event';
+import EventCard from './EventCard'; // Import the component to display individual events
+import Cookies from 'js-cookie';
+import Link from 'next/link';
 
 export default function Card() {
+  const [events, setEvents] = useState<IEvent[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const loggedIn = Cookies.get('token');
+      setIsLoggedIn(!!loggedIn);
+    };
+
+    checkLoginStatus();
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/api/events`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!res.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const responseData = await res.json();
+        const filteredEvents = responseData.eventData.filter(
+          (event: any) => event.id === 2 || event.id === 3 || event.id === 7,
+        );
+        setEvents(filteredEvents); // Set the array of events
+        // console.log(responseData.eventData[0].eventSlug);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
-    <div className="py-3 pl-4">
-      <h1 className="text-2xl font-bold">Event Pilihan</h1>
-      <div className="card card-compact w-96 bg-base-100 shadow-xl">
-        <figure>
-          <img
-            src="https://daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.jpg"
-            alt="Shoes"
-          />
-        </figure>
-        <div className="card-body">
-          <h2 className="card-title">Shoes!</h2>
-          <p>If a dog chews shoes whose shoes does he choose?</p>
-          <div className="card-actions justify-end">
-            <button className="btn btn-primary">Buy Now</button>
-          </div>
-        </div>
+    <div className="py-3 pl-4 z-0 " id="events">
+      <h1 className="text-5xl font-bold text-center my-3">Events</h1>
+
+      <div className="flex justify-center items-center gap-3 flex-wrap">
+        {events.map((event) => (
+          <EventCard key={event.id} event={event} isLoggedIn={isLoggedIn} /> // Render EventCard component for each event
+        ))}
+      </div>
+
+      <div className="flex justify-center mt-6">
+        <Link
+          href="/jelajah"
+          className="btn btn-primary btn-lg transition-transform transform hover:scale-105 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-2xl"
+        >
+          View All Events
+        </Link>
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
+import Link from 'next/link';
 import React from 'react';
 
 export default function Dashboard() {
   return (
-    <div className="h-screen">
+    <div>
       <h1 className="text-3xl font-bold pl-10 my-5">Dashboard</h1>
       <div className=" flex flex-wrap justify-center items-center gap-4">
         {/* Card 1 */}

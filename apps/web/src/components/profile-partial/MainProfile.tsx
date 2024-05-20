@@ -3,6 +3,7 @@ import { useAppSelector } from '@/lib/features/hooks';
 import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import Link from 'next/link';
+import ChangeRole from './ChangeRole';
 
 export interface IUser {
   id: number;
@@ -26,6 +27,7 @@ export interface IUser {
     discountPercentage: number;
     expired_date: string;
   }[];
+  role: string;
 }
 
 export default function MainProfile() {
@@ -57,6 +59,7 @@ export default function MainProfile() {
 
         const responseData = await res.json();
         setUser(responseData.data);
+        // console.log('from mainprofile:', responseData);
       } catch (error) {
         console.error(error);
       }
@@ -80,8 +83,8 @@ export default function MainProfile() {
   }
 
   return (
-    <div className="grid-profile h-screen mx-10">
-      <div className="container">
+    <div className="grid-profile  mx-10 -z-0">
+      <div className="container flex flex-col gap-4">
         <time dateTime="2030-10-25" suppressHydrationWarning />
         <div className="card bg-base-100 shadow-xl p-4">
           <div className="card-title">
@@ -115,85 +118,108 @@ export default function MainProfile() {
             </p>
           </div>
         </div>
+        <ChangeRole />
       </div>
 
       <div className="container">
         <div className="card bg-base-100 shadow-xl p-4">
           <div className="card-title">Biodata Diri</div>
-          <div className="card-body">
-            <div className="biodata-grid">
-              <div className="container max-md:w-[50%]">
-                <img
-                  src={user.userDetail?.photo_profile || 'N/A'}
-                  alt="Profile"
-                  className="w-[17rem] h-[17rem] object-cover max-md:w-[13rem] max-md:h-[13rem] max-sm:w-[9rem] max-sm:h-[9rem]"
-                />
-              </div>
-              <div className="container max-md:w-[100%]">
-                <table className="w-full h-auto">
-                  <tbody>
-                    <tr>
-                      <td className="w-[40%]">Username</td>
-                      <td className="w-[60%]">{user.username || 'N/A'}</td>
-                    </tr>
-                    <tr>
-                      <td className="w-[40%]">Nama Depan</td>
-                      <td className="w-[60%]">
-                        {user.userDetail?.nama_depan || 'N/A'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="w-[40%]">Nama Belakang</td>
-                      <td className="w-[60%]">
-                        {user.userDetail?.nama_belakang || 'N/A'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="w-[40%]">Email</td>
-                      <td className="w-[60%]">{user.email || 'N/A'}</td>
-                    </tr>
-                    <tr>
-                      <td className="w-[40%]">Tanggal Lahir</td>
-                      <td className="w-[60%]">
-                        {user.userDetail?.tanggal_lahir
-                          ? new Date(
-                              user.userDetail.tanggal_lahir,
-                            ).toLocaleDateString('id', {
-                              day: '2-digit',
-                              month: 'long',
-                              year: 'numeric',
-                            })
-                          : 'N/A'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="w-[40%]">Jenis Kelamin</td>
-                      <td className="w-[60%]">
-                        {user.userDetail?.jenis_kelamin
-                          ? formatGender(user.userDetail.jenis_kelamin)
-                          : 'N/A'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="w-[40%]">Nomor Telepon</td>
-                      <td className="w-[60%]">
-                        {user.userDetail?.nomor_telepon || 'N/A'}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="w-[40%]">Kode Referral</td>
-                      <td className="w-[60%]">
-                        {user.referral?.myReferralCode || 'N/A'}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <Link
-                  href="/profile/edit-profile"
-                  className="btn btn-primary w-auto mt-10"
-                >
-                  Edit Profile
-                </Link>
+          <div className="card bg-base-100 shadow-xl p-6 rounded-lg">
+            <div className="card-body">
+              <div className="flex flex-col md:flex-row items-center">
+                <div className="md:w-1/3 flex justify-center mb-6 md:mb-0">
+                  <img
+                    src={user.userDetail?.photo_profile || 'N/A'}
+                    alt="Profile"
+                    className="w-[17rem] h-[17rem] object-cover md:w-[13rem] md:h-[13rem] sm:w-[9rem] sm:h-[9rem] rounded-full shadow-md"
+                  />
+                </div>
+                <div className="md:w-2/3 md:ml-6">
+                  <table className="w-full table-auto">
+                    <tbody>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">
+                          Username
+                        </td>
+                        <td className="p-2 text-center">
+                          {user.username || 'N/A'}
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">
+                          Nama Depan
+                        </td>
+                        <td className="p-2 text-center">
+                          {user.userDetail?.nama_depan || 'N/A'}
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">
+                          Nama Belakang
+                        </td>
+                        <td className="p-2 text-center">
+                          {user.userDetail?.nama_belakang || 'N/A'}
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">Email</td>
+                        <td className="p-2 text-center">
+                          {user.email || 'N/A'}
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">
+                          Tanggal Lahir
+                        </td>
+                        <td className="p-2 text-center">
+                          {user.userDetail?.tanggal_lahir
+                            ? new Date(
+                                user.userDetail.tanggal_lahir,
+                              ).toLocaleDateString('id', {
+                                day: '2-digit',
+                                month: 'long',
+                                year: 'numeric',
+                              })
+                            : 'N/A'}
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">
+                          Jenis Kelamin
+                        </td>
+                        <td className="p-2 text-center">
+                          {user.userDetail?.jenis_kelamin
+                            ? formatGender(user.userDetail.jenis_kelamin)
+                            : 'N/A'}
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">
+                          Nomor Telepon
+                        </td>
+                        <td className="p-2 text-center">
+                          {user.userDetail?.nomor_telepon || 'N/A'}
+                        </td>
+                      </tr>
+                      <tr className="border-b">
+                        <td className="p-2 font-semibold text-left">
+                          Kode Referral
+                        </td>
+                        <td className="p-2 text-center">
+                          {user.referral?.myReferralCode || 'N/A'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div className="flex justify-center mt-6">
+                    <Link
+                      href="/profile/edit-profile"
+                      className="btn btn-primary"
+                    >
+                      Edit Profile
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

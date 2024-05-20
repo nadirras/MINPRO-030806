@@ -124,6 +124,7 @@ export const changeEmail = async (
     // body: data,
   });
   const result = await res.json();
+  console.log('for change email user ts:', result);
   return result;
 };
 
@@ -152,5 +153,29 @@ export const resetPassword = async (data: any, token: string) => {
     },
   );
   const result = await res.json();
+  return result;
+};
+
+export const changeRole = async (
+  data: any,
+  token: string | undefined,
+): Promise<any> => {
+  console.log(data);
+
+  const res = await fetch(
+    `http://localhost:8000/api/users/request-change-role`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+      // body: JSON.stringify(data),
+
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  const result = await res.json();
+  console.log('result from user.ts', result);
   return result;
 };

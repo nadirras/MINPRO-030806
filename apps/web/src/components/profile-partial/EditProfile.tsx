@@ -62,6 +62,7 @@ export default function EditProfile() {
       }
       dispatch(setUser(res.user));
       alert('Profile updated successfully');
+      console.log('res:', res);
     } catch (error) {
       console.log('Error updating profile:', error);
     }
@@ -91,7 +92,8 @@ export default function EditProfile() {
         }
 
         const userData = await res.json();
-        setIsUser(userData.data);
+        setIsUser(userData);
+        console.log('userdata editprofile:', userData.userDetail);
       } catch (error) {
         console.error(error);
       }

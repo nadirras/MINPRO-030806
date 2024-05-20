@@ -8,8 +8,6 @@ import fs from 'fs';
 import handlebars from 'handlebars';
 import { transporter } from '../helpers/nodemailer';
 import dotenv from 'dotenv';
-import multer from 'multer';
-import jwt from 'jsonwebtoken';
 dotenv.config();
 // const databaseUrl = process.env.DATABASE_URL;
 const jwtKey = process.env.KEY_JWT;
@@ -280,7 +278,6 @@ export class UserController {
         nomor_telepon,
       } = req.body;
 
-
       console.log(req.file);
 
       // Validasi format tanggal_lahir (YYYY-MM-DD)
@@ -292,7 +289,6 @@ export class UserController {
       let existingUserDetail = await prisma.userDetail.findUnique({
         where: { userId },
       });
-
 
       if (!existingUserDetail) {
         // Create a new user detail if not found
@@ -408,7 +404,6 @@ export class UserController {
         return res.status(404).send({ message: 'Email not found.' });
       }
 
-
       const payload = {
         id: user.id,
         reset: true,
@@ -416,8 +411,8 @@ export class UserController {
 
       const reset_token = sign(payload, process.env.KEY_JWT!);
       //Prepare email template
+      // const link = `http://localhost:8000/api/users/reset-password/${reset_token}`;
       const link = `http://localhost:3000/reset-password/${reset_token}`;
-
 
       //Send email reset password
       const templatePath = path.join(
@@ -515,7 +510,7 @@ export class UserController {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).send({ message: 'User ID not found in request.' });
+      return res.status(400).send({ message: 'User ID not found in request.' });
     }
 
     const { newEmail } = req.body;
@@ -533,9 +528,8 @@ export class UserController {
       });
 
       if (!user) {
-        return res.status(404).json({ message: 'User not found.' });
+        return res.status(400).send({ message: 'User not found.' });
       }
-
 
       // Check if the new email is already in use
       const existingUser = await prisma.user.findUnique({
@@ -545,7 +539,7 @@ export class UserController {
       });
 
       if (existingUser) {
-        return res.status(400).json({ message: 'Email is already in use.' });
+        return res.status(400).send({ message: 'Email is already in use.' });
       }
 
       // Generate JWT token for email verification
@@ -553,7 +547,9 @@ export class UserController {
         id: user.id,
         newEmail: newEmail,
       };
-      const token = sign(payload, jwtKey!, { expiresIn: '1d' });
+      const email_token = sign(payload, jwtKey!, { expiresIn: '1d' });
+      // const link = `http://localhost:8000/api/users/verify-email/${email_token}`;
+      const link = 'http://localhost:3000/verifikasi-email';
 
       //Send email confirmation change email
       const templatePath = path.join(
@@ -561,10 +557,12 @@ export class UserController {
         '../templates',
         'verifyChangeEmail.html',
       );
+
       const templateSource = fs.readFileSync(templatePath, 'utf-8');
       const compiledTemplate = handlebars.compile(templateSource);
       const html = compiledTemplate({
         name: user.username,
+        link,
       });
 
       //Send verify email
@@ -575,55 +573,38 @@ export class UserController {
         html,
       });
 
-
       // Send success response
       res.status(200).send({
         status: 'OK',
         message:
           'Verification email sent. Please check your new email to verify the address',
         newEmail,
-        token,
+        email_token,
       });
     } catch (error) {
       console.error('Failed to change email:', error);
       res.status(500).send({ message: 'Failed to change email.' });
-
     }
   }
 
   //verify new wmail
   async verifyChangeEmail(req: Request, res: Response) {
+    const { token } = req.params;
+
     try {
       // get token from req.params
-      let token: string | undefined = req.params.token;
-
-      if (!token) {
-        token =
-          (req.query.token as string) ||
-          req.headers.authorization?.replace('Bearer ', '');
-        if (!token) {
-          throw new Error('Token is required.');
-        }
-      }
-
-      // Verify token
-      const jwtKey = process.env.KEY_JWT!;
-      const verifyUser = jwt.verify(token, jwtKey) as {
+      const decodedToken = verify(token, process.env.KEY_JWT!) as {
         id: number;
-        newEmail: string;
+        newEmail: string; // Include targetRole in the type
       };
 
-      // Debug logging
-      console.log('Decoded token:', verifyUser);
-
-      if (!verifyUser.id || !verifyUser.newEmail) {
-        throw new Error('Invalid token payload');
-      }
+      const userId = decodedToken.id;
+      const newEmail = decodedToken.newEmail;
 
       //Update email in database
       const updateUser = await prisma.user.update({
-        where: { id: verifyUser.id },
-        data: { email: verifyUser.newEmail },
+        where: { id: userId },
+        data: { email: newEmail },
       });
 
       res.status(200).send({
@@ -637,53 +618,7 @@ export class UserController {
     }
   }
 
-  //verify new wmail
-  async verifyChangeEmail(req: Request, res: Response) {
-    try {
-      // get token from req.params
-      let token: string | undefined = req.params.token;
-
-      if (!token) {
-        token =
-          (req.query.token as string) ||
-          req.headers.authorization?.replace('Bearer ', '');
-        if (!token) {
-          throw new Error('Token is required.');
-        }
-      }
-
-      // Verify token
-      const jwtKey = process.env.KEY_JWT!;
-      const verifyUser = jwt.verify(token, jwtKey) as {
-        id: number;
-        newEmail: string;
-      };
-
-      // Debug logging
-      console.log('Decoded token:', verifyUser);
-
-      if (!verifyUser.id || !verifyUser.newEmail) {
-        throw new Error('Invalid token payload');
-      }
-
-      //Update email in database
-      const updateUser = await prisma.user.update({
-        where: { id: verifyUser.id },
-        data: { email: verifyUser.newEmail },
-      });
-
-      res.status(200).send({
-        status: 'OK',
-        message: 'Email updated successfully.',
-        user: updateUser,
-      });
-    } catch (error) {
-      console.error('Failed to verify email change:', error);
-      res.status(500).send({ message: 'Failed to verify email change.' });
-    }
-  }
   //Get data by Id
-
   async GetDataById(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id, 10);
@@ -694,6 +629,7 @@ export class UserController {
           .send({ status: 'error', message: 'Invalid user ID' });
       }
 
+      // Use Prisma to fetch all related data from different tables
       const userData = await prisma.user.findUnique({
         where: { id },
         select: {
@@ -721,15 +657,14 @@ export class UserController {
           discountVoucher: {
             where: {
               expired_date: {
-
                 gte: new Date(), // Filter vouchers that are not expired
-
               },
             },
           },
         },
       });
 
+      // Check if userData is found
       if (!userData) {
         return res.status(404).send({
           status: 'error',
@@ -740,7 +675,7 @@ export class UserController {
       // Initialize totalActivePoints to 0
       let totalActivePoints = 0;
 
-
+      // Check and update status of points based on expired_date
       for (const point of userData.Points) {
         if (point.expired_date < new Date()) {
           await prisma.points.update({
@@ -752,9 +687,7 @@ export class UserController {
         }
       }
 
-
       // Check and update status of discount vouchers based on expired_date
-
       for (const voucher of userData.discountVoucher) {
         if (voucher.expired_date < new Date()) {
           await prisma.discountVoucher.update({
@@ -764,17 +697,13 @@ export class UserController {
         }
       }
 
-
       // Structure the response
-
       const response = {
         id: userData.id,
         username: userData.username,
         email: userData.email,
         usedReferralCode: userData.usedReferralCode,
-
         role: userData.Role,
-
         userDetail: userData.UserDetail,
         referral: userData.referral,
         totalActivePoints,
@@ -795,7 +724,6 @@ export class UserController {
         status: 'error',
         message: 'Failed to fetch user data',
       });
-
     }
   }
 
@@ -898,6 +826,7 @@ export class UserController {
   //Request Change Role
   async requestRoleChange(req: Request, res: Response) {
     const { email, targetRole } = req.body;
+    console.log(req.body);
     try {
       const user = await prisma.user.findUnique({
         where: { email },
@@ -909,11 +838,11 @@ export class UserController {
 
       const payload = {
         id: user.id,
-        targetRole
+        targetRole,
       };
 
       const role_token = sign(payload, process.env.KEY_JWT!);
-      const link = `http://localhost:8000/api/users/verify-role/${role_token}`;
+      const link = `http://localhost:3000/verifikasi-role/${role_token}`;
       // const link = `http://localhost:3000/reset-password/${reset_token}`;
 
       //Send email reset password
@@ -979,7 +908,6 @@ export class UserController {
     } catch (error) {
       console.error('Failed to change role:', error);
       res.status(400).send({ message: 'Failed to change role' });
-
     }
   }
 }

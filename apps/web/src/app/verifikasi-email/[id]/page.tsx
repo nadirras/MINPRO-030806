@@ -15,13 +15,16 @@ export default function VerifikasiEmail() {
         return;
       }
 
-      const res = await fetch(`http://localhost:8000/api/users/verify-email/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${params.token}`,
+      const res = await fetch(
+        `http://localhost:8000/api/users/verify-email/$`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${params.token}`,
+          },
         },
-      });
+      );
       const data = await res.json();
       console.log(data);
       alert('Verify Success!');
