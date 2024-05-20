@@ -1,50 +1,117 @@
-// pages/order.tsx
 'use client';
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
+import Cookies from 'js-cookie';
 import { fetchCart } from '@/lib/features/cart/cartSlice';
+import { confirmPayment, createOrder } from '@/lib/order';
+import OrderPage from '@/components/keranjang-partial/OrderPage';
+import { useAppDispatch, useAppSelector } from '@/lib/features/hooks';
 import { RootState } from '@/lib/features/store';
-import { KeranjangCard } from '@/components/keranjang-partial/KeranjangCard';
 import Link from 'next/link';
-import { useAppDispatch } from '@/lib/features/hooks';
+import { useRouter } from 'next/navigation';
 
-const OrderPage: React.FC = () => {
+const OrderSchema = Yup.object().shape({
+  voucherCode: Yup.string(),
+  cartItemsToCheckout: Yup.array().required('Cart items are required'),
+  paymentMethod: Yup.string().required('Payment method is required'),
+});
+
+const OrderPageCombine: React.FC = () => {
+  const router = useRouter();
+  const [orderId, setOrderId] = useState<number | null>(null);
   const dispatch = useAppDispatch();
-  const cart = useSelector((state: RootState) => state.cart.cart);
-  const cartStatus = useSelector((state: RootState) => state.cart.status);
-  const error = useSelector((state: RootState) => state.cart.error);
+  const token = Cookies.get('token');
+  const cart = useAppSelector((state: RootState) => state.cart.cart);
 
   useEffect(() => {
-    if (cartStatus === 'idle') {
-      dispatch(fetchCart());
+    dispatch(fetchCart());
+  }, [dispatch]);
+
+  const handleToPayment = async (values: any, actions: any) => {
+    try {
+      const cartItemsToCheckout =
+        cart.data?.cartItems.map((item: any) => item.cartItemId) || [];
+
+      const res = await createOrder({ ...values, cartItemsToCheckout }, token);
+
+      if (res.error) {
+        console.error('Error creating order:', res.error);
+        // Handle error (e.g., display error message to the user)
+      } else {
+        console.log('Order created successfully:', res);
+        // router.push('/payment');
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      // Handle error (e.g., display error message to the user)
+    } finally {
+      actions.setSubmitting(false);
     }
-  }, [cartStatus, dispatch]);
-
-  if (cartStatus === 'loading') {
-    return <div>Loading...</div>;
-  }
-
-  if (cartStatus === 'failed') {
-    return <div>Error: {error}</div>;
-  }
+  };
 
   return (
-    <div className="min-h-[60rem] flex flex-col justify-center items-center">
-      <h1 className="text-2xl font-bold mb-4">Order Page</h1>
-      {cart && cart.cartItems && cart.cartItems.length > 0 ? (
-        cart.cartItems.map((item: any) => (
-          <KeranjangCard key={item.eventId} cart={item} />
-        ))
-      ) : (
-        <div>Your cart is empty</div>
-      )}
-      <div className="mt-4">
-        <Link href="/checkout">
-          <button className="btn btn-primary">Proceed to Checkout</button>
-        </Link>
-      </div>
+    <div className="my-5 min-h-[80rem]">
+      <OrderPage />
+      <Formik
+        initialValues={{
+          voucherCode: '',
+          cartItemsToCheckout: [],
+          paymentMethod: 'virtual account',
+        }}
+        validationSchema={OrderSchema}
+        onSubmit={handleToPayment}
+      >
+        {({ isSubmitting }) => (
+          <Form className="flex flex-col justify-center items-center gap-3">
+            <div className="content-forms">
+              <label className="input input-bordered flex items-center gap-2 bg-white">
+                Kode Voucher
+                <Field
+                  name="voucherCode"
+                  type="text"
+                  className="grow"
+                  placeholder=""
+                />
+              </label>
+              <ErrorMessage
+                name="voucherCode"
+                component="div"
+                className="error-message"
+              />
+
+              <Field type="hidden" name="cartItemsToCheckout" />
+
+              <label className="input input-bordered flex items-center gap-2 bg-white">
+                Metode Pembayaran
+                <Field
+                  name="paymentMethod"
+                  type="text"
+                  className="grow "
+                  placeholder="virtual account"
+                />
+              </label>
+              <ErrorMessage
+                name="paymentMethod"
+                component="div"
+                className="error-message"
+              />
+            </div>
+
+            <div className="mt-4">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Order'}
+              </button>
+            </div>
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 };
 
-export default OrderPage;
+export default OrderPageCombine;

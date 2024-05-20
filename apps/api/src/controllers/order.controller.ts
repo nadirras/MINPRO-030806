@@ -7,11 +7,12 @@ export class OrderController {
     try {
       const { voucherCode, pointsToUse, cartItemsToCheckout, paymentMethod } =
         req.body;
-
+      console.log('Received request payload:', req.body);
       if (
         !Array.isArray(cartItemsToCheckout) ||
         cartItemsToCheckout.length === 0
       ) {
+        console.log('Cart items to checkout are missing or invalid');
         return res.status(400).send({ error: 'Select cart items to checkout' });
       }
 

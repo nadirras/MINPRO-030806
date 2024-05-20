@@ -13,10 +13,11 @@ export interface CartItem {
 }
 
 export interface Cart {
+  // data: Cart | null;
+  totalCartPrice: number;
+  cartItems: CartItem[];
   userId: number;
   username: string;
-  cartItems: CartItem[];
-  totalCartPrice: number;
 }
 
 export interface CartSlice {
@@ -63,7 +64,7 @@ export const addToCart = createAsyncThunk(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ eventSlug, quantity }), // Sending eventSlug instead of eventId
+      body: JSON.stringify({ eventSlug, quantity }),
     });
 
     if (!res.ok) {

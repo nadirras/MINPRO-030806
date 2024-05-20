@@ -130,8 +130,7 @@ export class PaymentController {
     } catch (error) {
       console.error(error);
       res.status(400).send({
-        message: 'Terjadi kesalahan saat mengambil riwayat transaksi:',
-        error,
+        message: 'Terjadi kesalahan saat mengambil riwayat transaksi.',
       });
     }
   }

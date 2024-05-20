@@ -54,9 +54,9 @@ export const KeranjangCard: React.FC<KeranjangCardProps> = ({ cart }) => {
   };
 
   return (
-    <div className="card bg-base-100 w-[40rem] max-md:w-[80%] max-sm:w-[50%] shadow-xl">
-      <div className="card bg-white w-[40rem] max-md:w-[95%] shadow-lg rounded-lg overflow-hidden mb-4">
-        <div className="card-body p-4 flex flex-col">
+    <div className="card bg-base-100 w-[40rem] max-md:w-[80%] max-sm:w-[50%] shadow-xl ">
+      <div className="card bg-white w-[40rem] max-md:w-[95%] shadow-lg rounded-lg overflow-hidden mb-4 ">
+        <div className="card-body p-4 flex flex-col ">
           <div className="flex items-center justify-between mb-2">
             <h2 className="card-title text-xl font-bold text-gray-800">
               {cart.eventName}
