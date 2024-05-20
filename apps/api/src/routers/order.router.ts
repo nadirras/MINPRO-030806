@@ -15,7 +15,7 @@ export class OrderRouter {
   }
 
   private initializeRoutes(): void {
-    this.router.patch(
+    this.router.post(
       '/',
       this.userMiddleware.verifyToken,
       this.orderController.createOrder,

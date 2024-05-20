@@ -97,7 +97,7 @@ export default function MainProfile() {
               user.discount.map((voucher, index) => (
                 <div key={index} className="voucher-item">
                   <p>
-                    Voucher: <br /> Diskon {voucher.discountPercentage}%
+                    Voucher Diskon: <br /> {voucher.discountCoupon}
                   </p>
                   <p>
                     Kadaluarsa:
