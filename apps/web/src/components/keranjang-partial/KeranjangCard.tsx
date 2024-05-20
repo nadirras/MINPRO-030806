@@ -1,6 +1,7 @@
 'use client';
 import {
   clearCartItem,
+  removeCartItem,
   setCart,
   updateCartItem,
 } from '@/lib/features/cart/cartSlice';
@@ -45,16 +46,13 @@ export const KeranjangCard: React.FC<KeranjangCardProps> = ({ cart }) => {
 
       const updatedItem = await res.json();
       setQuantity(updatedItem.quantity);
-      dispatch(updateCartItem(updatedItem));
-      dispatch(setCart(updatedItem));
-      // Dispatch an action to update the cart in Redux store
+
       if (updatedItem.quantity === 0) {
         // If the quantity becomes 0, remove the item from the cart
-        dispatch(clearCartItem(updatedItem.eventId));
+        dispatch<any>(removeCartItem({ eventId: updatedItem.eventId }));
       } else {
         // Otherwise, update the cart item
         dispatch(updateCartItem(updatedItem));
-        dispatch(setCart(updatedItem));
       }
     } catch (error) {
       console.error('Error updating cart:', error);
@@ -62,8 +60,8 @@ export const KeranjangCard: React.FC<KeranjangCardProps> = ({ cart }) => {
   };
 
   return (
-    <div className="card bg-base-100 w-[40rem] shadow-xl">
-      <div className="card bg-white w-[40rem] shadow-lg rounded-lg overflow-hidden mb-4">
+    <div className="card bg-base-100 w-[40rem] max-md:w-[80%] max-sm:w-[50%] shadow-xl">
+      <div className="card bg-white w-[40rem] max-md:w-[95%] shadow-lg rounded-lg overflow-hidden mb-4">
         <div className="card-body p-4 flex flex-col">
           <div className="flex items-center justify-between mb-2">
             <h2 className="card-title text-xl font-bold text-gray-800">
@@ -71,7 +69,7 @@ export const KeranjangCard: React.FC<KeranjangCardProps> = ({ cart }) => {
             </h2>
             <span className="text-sm text-gray-500">{cart.eventCategory}</span>
           </div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex max-sm:flex-col items-center justify-between mb-4">
             <div>
               <p className="text-lg font-semibold text-gray-600">
                 Harga Tiket:

@@ -29,7 +29,10 @@ export default function Card() {
         }
 
         const responseData = await res.json();
-        setEvents(responseData.eventData.slice(0, 3)); // Set the array of events
+        const filteredEvents = responseData.eventData.filter(
+          (event: any) => event.id === 2 || event.id === 3 || event.id === 7,
+        );
+        setEvents(filteredEvents); // Set the array of events
         // console.log(responseData.eventData[0].eventSlug);
       } catch (error) {
         console.log(error);

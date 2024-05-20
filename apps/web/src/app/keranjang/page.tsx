@@ -5,7 +5,7 @@ import React from 'react';
 
 export default function KeranjangPage() {
   return (
-    <div className="p-10">
+    <div className="min-h-[60rem] pl-5 pt-5 ">
       <CartContent />
       {/* <LeftSide />
       <RightSide /> */}

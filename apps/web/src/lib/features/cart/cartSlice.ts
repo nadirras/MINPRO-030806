@@ -79,6 +79,28 @@ export const updateCartItem = createAsyncThunk(
   },
 );
 
+export const removeCartItem = createAsyncThunk(
+  'cart/removeCartItem',
+  async ({ eventId }: { eventId: number }, thunkAPI) => {
+    const token = Cookies.get('token');
+    const res = await fetch(
+      `http://localhost:8000/api/carts/remove-cart-item/${eventId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error('Failed to remove cart item');
+    }
+
+    return await res.json();
+  },
+);
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
@@ -106,6 +128,13 @@ const cartSlice = createSlice({
     });
     builder.addCase(updateCartItem.fulfilled, (state, action) => {
       // Handle successful cart item update if necessary
+    });
+    builder.addCase(removeCartItem.fulfilled, (state, action) => {
+      if (state.cart) {
+        state.cart.cartItems = state.cart.cartItems.filter(
+          (item) => item.eventId !== action.payload.eventId,
+        );
+      }
     });
   },
 });

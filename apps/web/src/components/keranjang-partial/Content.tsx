@@ -37,7 +37,7 @@ export default function CartContent() {
   }, [dispatch]);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col ">
       <h1 className="text-2xl font-bold text-primary">Keranjang</h1>
       <div className="divider"></div>
       <div>
