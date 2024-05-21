@@ -71,3 +71,17 @@ export const patchEventSlug = async (data: any, slug: string) => {
     console.error(error);
   }
 };
+
+export async function getUserEvents(userId: number) {
+  const response = await fetch(
+    `http://localhost:8000/api/events/users/${userId}`,
+  );
+  const data = await response.json();
+  return data;
+}
+
+export async function getDashboard() {
+  const response = await fetch(`http://localhost:8000/api/organizers`);
+  const data = await response.json();
+  return data;
+}

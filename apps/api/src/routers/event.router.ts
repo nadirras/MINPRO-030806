@@ -38,6 +38,7 @@ export class eventRouter {
     );
     // this.router.post('/book-ticket', this.eventController.bookTicket);
     this.router.get('/:slug', this.eventController.getEventSlug);
+    // this.router.get('/:id/reports', this.eventController.getEventReports);
     // this.router.get('/:id', this.eventController.getEventById);
     this.router.get('/users/:userId', this.eventController.getEventbyUserId);
   }
