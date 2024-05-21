@@ -56,6 +56,8 @@ export class DashboardController {
         return {
           eventId: event.id,
           eventName: event.eventName,
+          eventLocation: event.location, // Add event location
+          eventStartTime: event.startTime, // Add event start time
           isPaid,
           ticketPrice,
           totalRegistrations,

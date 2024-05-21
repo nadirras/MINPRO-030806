@@ -10,7 +10,7 @@ export default function KeranjangPage() {
       <CartContent />
       <div className="card-actions justify-end">
         <Link href="/order" className="btn btn-primary">
-          Checkout
+          Order
         </Link>
       </div>
       {/* <LeftSide />

@@ -104,6 +104,9 @@ export const Header = () => {
             <Link href="/keranjang">Keranjang</Link>
           </li>
           <li>
+            <Link href="/orders">List Order</Link>
+          </li>
+          <li>
             <Link href="/tentang">Tentang Kami</Link>
           </li>
         </>

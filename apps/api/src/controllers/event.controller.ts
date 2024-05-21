@@ -470,6 +470,21 @@ export class EventController {
       });
     }
   }
+  // async getEventReports(req: Request, res: Response) {
+  //   const { eventId } = req.params;
+  //   try {
+  //     const reports = await prisma.event.findMany({
+  //       where: { id: Number(eventId) },
+  //     });
+
+  //     res.status(200).json({ reports });
+  //   } catch (error) {
+  //     res.status(400).send({
+  //       status: 'error',
+  //       message: error,
+  //     });
+  //   }
+  // }
 
   //Book Ticket
   // async bookTicket(req: Request, res: Response) {
